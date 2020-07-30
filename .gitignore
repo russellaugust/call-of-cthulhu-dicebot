@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# local things
+/charactersheets
+.vscode
+dicebot.db
+credentials*
+
+playground*
+holding*
+test*
+.DS_Store*
