@@ -90,7 +90,8 @@ class DiceRolls:
         for x in range (0, int(found.group(2))):
           equation = self.generate_results_string(found.group(1))
           total = self.calculate_total(equation)
-          dr = DiceResult(argument=found.group(1), equation=equation, sumtotal=total, stat=None)
+          comment = found.group(1).split('#', 1)[1] if '#' in found.group(1) else None
+          dr = DiceResult(argument=found.group(1), equation=equation, sumtotal=total, stat=None, comment=comment)
           self.rolls.append(dr)
       else:
         None
@@ -108,8 +109,9 @@ class DiceRolls:
       stat = found.group(0)
       equation = self.generate_results_string("1d100")
       total = self.calculate_total(equation)
+      comment = rolls_arg.split('#', 1)[1] if '#' in rolls_arg else None
       
-      dr = DiceResult(argument=rolls_arg, equation=equation, sumtotal=total, stat=stat)
+      dr = DiceResult(argument=rolls_arg, equation=equation, sumtotal=total, stat=stat, comment=comment)
       self.rolls.append(dr)
 
     else:
@@ -117,8 +119,9 @@ class DiceRolls:
       print ("catch-all, standard dice roll")
       equation = self.generate_results_string(rolls_arg)
       total = self.calculate_total(equation)
+      comment = rolls_arg.split('#', 1)[1] if '#' in rolls_arg else None
 
-      dr = DiceResult(argument=rolls_arg, equation=equation, sumtotal=total, stat=None)
+      dr = DiceResult(argument=rolls_arg, equation=equation, sumtotal=total, stat=None, comment=comment)
       self.rolls.append(dr)
 
 
@@ -184,9 +187,9 @@ if __name__ == '__main__':
   #test_string = '1D100 45'
   #test_string = '45'
   #test_string = 'i farted'
-  test_string = "45 + 45 + 23 (10-1)"
+  test_string = "45 + 45 + 23 (10-1) # hello#hello #hello #herloo!"
   myrolls = DiceRolls(test_string)
   dice = myrolls.getroll(0)
 
-  results = "{}: {} = {} is {}".format("ctx.author.mention", dice.get_equation(), dice.get_sumtotal(), dice.get_success())
+  results = "{}: {} = {} is {} comment={}".format("ctx.author.mention", dice.get_equation(), dice.get_sumtotal(), dice.get_success(), dice.get_comment())
   print (results)

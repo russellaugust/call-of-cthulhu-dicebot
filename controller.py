@@ -38,17 +38,27 @@ async def r(ctx, *, arg):
     # If the success field in the first dice roll is filled in, then that means it had to be a stat roll with a 1d100 so it. 
     elif dice.getroll().get_success() is not None:
         for roll in dice.getrolls():
+            if roll.get_comment() is None:
+                description="{}: {} = {} against a {}\n***{}***".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success())
+            else:
+                description="{}: {} = {} against a {} for {}\n***{}***".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_comment(), roll.get_success())
+                
             embed = discord.Embed(
                 colour=discord.Colour(0x24ed60), 
-                description="{}: {} = {} against a {}\n***{}***".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success())
+                description=description
                 )
     
     # right now this should indicate every other roll condition.
     else:
         for roll in dice.getrolls():
+            if roll.get_comment() is None:
+                description="{}: {} = {}".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal())
+            else:
+                description="{}: {} = {} for {}".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_comment())
+
             embed = discord.Embed(
                 colour=discord.Colour(0x24ed60), 
-                description="{}: {} = {}".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal())
+                description=description
                 )
 
     await ctx.send(embed=embed)
