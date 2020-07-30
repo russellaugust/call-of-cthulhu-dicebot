@@ -13,7 +13,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS rolls
         equation text, 
         result int,
         stat int,
-        success text
+        success text,
         comment text)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS licorice
