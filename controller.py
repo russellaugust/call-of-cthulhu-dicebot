@@ -14,11 +14,12 @@ async def on_ready():
 async def r(ctx, *, arg):
     
     dice = diceroller.DiceRolls(arg)
+    #description = "{}: ".format(ctx.author.mention)
     description = ""
 
     # putting all results in the database.  It skips nothing, including failures and syntax errors!
     for roll in dice.getrolls():
-        print("{} {} {} {} {} {} {} {}".format(ctx.author, ctx.author.nick, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
+        print("{} {} {} {} {} {} {} {}".format(ctx.author, ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
         database.add_roll(str(ctx.author), ctx.author.nick, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment())
 
     # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
@@ -27,6 +28,7 @@ async def r(ctx, *, arg):
         embed = discord.Embed(
             colour=discord.Colour(0xbf1919), 
             description="*SPROÜTS!*   That's some bad syntax. Have a piece of [{} Licorice]({}) while you fix that.".format(licorice[0], licorice[1]), 
+            
             )
 
     # FAIL: condition if someone accidentally writes d00, which means roll a zero-sided die
@@ -40,11 +42,12 @@ async def r(ctx, *, arg):
     elif dice.getroll().get_success() is not None:
         for roll in dice.getrolls():
             if roll.get_comment() is None:
-                description += "{}: {} = {} against a {}\n***{}***\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success())
+                description += "{} = {} ***{}***\n".format(roll.get_equation(), roll.get_sumtotal(), roll.get_success())
             else:
-                description += "{}: {} = {} against a {} for {}\n***{}***\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_comment(), roll.get_success())
+                description += "{} = {} ***{}***\n".format(roll.get_equation(), roll.get_sumtotal(), roll.get_success())
                 
         embed = discord.Embed(
+            title=roll.get_comment(),
             colour=discord.Colour(0x24ed60), 
             description=description
             )
@@ -53,15 +56,17 @@ async def r(ctx, *, arg):
     else:
         for roll in dice.getrolls():
             if roll.get_comment() is None:
-                description += "{}: {} = {}\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal())
+                description += "{} = {}\n".format(roll.get_equation(), roll.get_sumtotal())
             else:
-                description += "{}: {} = {} for {}\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_comment())
+                description += "{} = {} for {}\n".format(roll.get_equation(), roll.get_sumtotal(), roll.get_comment())
 
         embed = discord.Embed(
+            title=roll.get_comment(),
             colour=discord.Colour(0x24ed60), 
             description=description
             )
 
+    embed.set_author(name=ctx.author.display_name, url=database.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)
     await ctx.send(embed=embed)
 
 @bot.command()
