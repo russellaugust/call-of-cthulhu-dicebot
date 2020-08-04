@@ -14,13 +14,14 @@ async def on_ready():
 async def r(ctx, *, arg):
     
     dice = diceroller.DiceRolls(arg)
+    description = ""
 
     # putting all results in the database.  It skips nothing, including failures and syntax errors!
     for roll in dice.getrolls():
-        print("{} {} {} {} {} {} {}".format(ctx.author, ctx.author.nick, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success()))
-        database.add_roll(str(ctx.author), ctx.author.nick, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success())
+        print("{} {} {} {} {} {} {} {}".format(ctx.author, ctx.author.nick, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
+        database.add_roll(str(ctx.author), ctx.author.nick, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment())
 
-    # in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
+    # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
     if dice.getroll().get_sumtotal() == None:
         licorice = database.get_random_licorice()
         embed = discord.Embed(
@@ -28,38 +29,38 @@ async def r(ctx, *, arg):
             description="*SPROÜTS!*   That's some bad syntax. Have a piece of [{} Licorice]({}) while you fix that.".format(licorice[0], licorice[1]), 
             )
 
-    # condition if someone accidentally writes d00, which means roll a zero-sided die
+    # FAIL: condition if someone accidentally writes d00, which means roll a zero-sided die
     elif "d00" in dice.getroll().get_argument():
         embed = discord.Embed(
             colour=discord.Colour(0xbf1919), 
-            description="Good lord, this is embarrasing... Maybe check that roll and try again.", 
+            description="Good lord, this is embarrassing... Check that roll and try again.", 
             )
 
-    # If the success field in the first dice roll is filled in, then that means it had to be a stat roll with a 1d100 so it. 
+    # PASS: If the success field in the first dice roll is filled in, then that means it had to be a stat roll with a 1d100 so it. 
     elif dice.getroll().get_success() is not None:
         for roll in dice.getrolls():
             if roll.get_comment() is None:
-                description="{}: {} = {} against a {}\n***{}***".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success())
+                description += "{}: {} = {} against a {}\n***{}***\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success())
             else:
-                description="{}: {} = {} against a {} for {}\n***{}***".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_comment(), roll.get_success())
+                description += "{}: {} = {} against a {} for {}\n***{}***\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_comment(), roll.get_success())
                 
-            embed = discord.Embed(
-                colour=discord.Colour(0x24ed60), 
-                description=description
-                )
+        embed = discord.Embed(
+            colour=discord.Colour(0x24ed60), 
+            description=description
+            )
     
-    # right now this should indicate every other roll condition.
+    # PASS: this is every other roll condition.
     else:
         for roll in dice.getrolls():
             if roll.get_comment() is None:
-                description="{}: {} = {}".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal())
+                description += "{}: {} = {}\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal())
             else:
-                description="{}: {} = {} for {}".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_comment())
+                description += "{}: {} = {} for {}\n".format(ctx.author.mention, roll.get_equation(), roll.get_sumtotal(), roll.get_comment())
 
-            embed = discord.Embed(
-                colour=discord.Colour(0x24ed60), 
-                description=description
-                )
+        embed = discord.Embed(
+            colour=discord.Colour(0x24ed60), 
+            description=description
+            )
 
     await ctx.send(embed=embed)
 
