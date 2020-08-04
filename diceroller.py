@@ -64,7 +64,7 @@ class DiceRolls:
     self.rolls = []
     rolls_arg = rolls_arg.lower() # normalize the argument
     
-    self.process_roll_request(rolls_arg) # begin parsing user input
+    self.process_roll_command(rolls_arg) # begin parsing user input
 
   def getroll(self, rollnumber=0):
     if len(self.rolls)>rollnumber:
@@ -78,51 +78,62 @@ class DiceRolls:
   def get_roll_count(self):
     return len(self.rolls)
 
-  def process_roll_request(self, rolls_arg):
-    # process the user input and see if its a command
+  def generate_roll(self, roll_arg):
+    '''parse the roll'''
 
-    # if its a repeat command
-    if "repeat(" in rolls_arg.lower(): # checks for 'repeat('
-      print ("repeat command")
-      pattern = r'repeat\((.+),\s*([0-9]+)\)' # pattern to check for correct formatting inside 'repeat()'
-      found = re.search(pattern, rolls_arg)
-      if found:
-        for x in range (0, int(found.group(2))):
-          equation = self.generate_results_string(found.group(1))
-          total = self.calculate_total(equation)
-          dr = DiceResult(argument=found.group(1), equation=equation, sumtotal=total, stat=None)
-          self.rolls.append(dr)
-      else:
-        None
+    argument = roll_arg
+    equation = None
+    total = None
+    stat = None
+    comment = None
 
-    elif bool(re.match(r'^[0-9]+$', rolls_arg)) or bool(re.match(r'^1d100\s[0-9]+$', rolls_arg)):
-    # a roll for a stat check, so a 1d100 against a stat
+    if '#' in roll_arg:
+      argument = roll_arg.split('#', 1)[0]
+      comment = roll_arg.split('#', 1)[1]
+  
+    # a roll for a stat check, so a 1d100 against a stat or just a clean number
+    if bool(re.match(r'^[0-9]+$', argument)) or bool(re.match(r'^1d100\s[0-9]+$', argument)):
 
       print ("dice roll against 1D100")
       
       pattern_1d100 = r'(?<=1d100\s)([0-9]+)' # pattern to check for dice roll or number
       pattern_int = r'^[0-9]+$' # a pattern to check one single integer
 
-      found = re.search(pattern_1d100, rolls_arg) if bool(re.search(pattern_1d100, rolls_arg)) else re.search(pattern_int, rolls_arg)        
+      found = re.search(pattern_1d100, argument) if bool(re.search(pattern_1d100, argument)) else re.search(pattern_int, argument)
 
       stat = found.group(0)
-      equation = self.generate_results_string("1d100")
+      equation = self.generate_equation("1d100")
       total = self.calculate_total(equation)
-      
-      dr = DiceResult(argument=rolls_arg, equation=equation, sumtotal=total, stat=stat)
-      self.rolls.append(dr)
 
     else:
       # this is meant to process everything else, but right now is mainly doing dice rolls. Or basic math.
       print ("catch-all, standard dice roll")
-      equation = self.generate_results_string(rolls_arg)
+      equation = self.generate_equation(argument)
       total = self.calculate_total(equation)
 
-      dr = DiceResult(argument=rolls_arg, equation=equation, sumtotal=total, stat=None)
-      self.rolls.append(dr)
+    dr = DiceResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment)
+    return dr
 
 
-  def generate_results_string(self, rolls_arg):
+  def process_roll_command(self, rolls_arg):
+    # process the user input and see if its a command
+
+    # if its a repeat command
+    if "repeat(" in rolls_arg.lower(): # checks if 'repeat('
+      print ("Command: Repeat")
+      pattern = r'repeat\((.+),\s*([0-9]+)\)' # pattern to check for correct formatting inside 'repeat()'
+      found = re.search(pattern, rolls_arg)
+      if found:
+        for x in range (0, int(found.group(2))):
+          self.rolls.append(self.generate_roll(found.group(1)))
+      else:
+        None
+
+    else:
+      print ("Command:  Single")
+      self.rolls.append(self.generate_roll(rolls_arg))
+
+  def generate_equation(self, rolls_arg):
     # this will take the roll string and replace the dice roll with a result
     diceroll_pattern = r'([0-9]+d[0-9]+)'
     dicerolls = re.findall(diceroll_pattern, rolls_arg.lower())
@@ -180,13 +191,13 @@ class DiceRolls:
 
 if __name__ == '__main__':
   #test_string = '4d100+45+(1d6-4)'
-  #test_string = 'repeat(2d100+6+3d8+(5-2),50)'
+  test_string = 'repeat(1D100 45,10)'
   #test_string = '1D100 45'
   #test_string = '45'
   #test_string = 'i farted'
-  test_string = "45 + 45 + 23 (10-1)"
+  #test_string = "45 + 45 + 23 (10-1) # hello#hello #hello #herloo!"
   myrolls = DiceRolls(test_string)
-  dice = myrolls.getroll(0)
 
-  results = "{}: {} = {} is {}".format("ctx.author.mention", dice.get_equation(), dice.get_sumtotal(), dice.get_success())
-  print (results)
+  for dice in myrolls.getrolls():
+    results = "{}: {} = {} is {} comment={}".format("ctx.author.mention", dice.get_equation(), dice.get_sumtotal(), dice.get_success(), dice.get_comment())
+    print (results)
