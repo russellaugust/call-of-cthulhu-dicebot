@@ -28,7 +28,6 @@ async def r(ctx, *, arg):
         embed = discord.Embed(
             colour=discord.Colour(0xbf1919), 
             description="*SPROÜTS!*   That's some bad syntax. Have a piece of [{} Licorice]({}) while you fix that.".format(licorice[0], licorice[1]), 
-            
             )
 
     # FAIL: condition if someone accidentally writes d00, which means roll a zero-sided die
@@ -41,10 +40,7 @@ async def r(ctx, *, arg):
     # PASS: If the success field in the first dice roll is filled in, then that means it had to be a stat roll with a 1d100 so it. 
     elif dice.getroll().get_success() is not None:
         for roll in dice.getrolls():
-            if roll.get_comment() is None:
-                description += "{} = {} ***{}***\n".format(roll.get_equation(), roll.get_sumtotal(), roll.get_success())
-            else:
-                description += "{} = {} ***{}***\n".format(roll.get_equation(), roll.get_sumtotal(), roll.get_success())
+            description += "{} is a ***{}***\n".format(roll.get_sumtotal(), roll.get_success())
                 
         embed = discord.Embed(
             title=roll.get_comment(),
@@ -55,10 +51,7 @@ async def r(ctx, *, arg):
     # PASS: this is every other roll condition.
     else:
         for roll in dice.getrolls():
-            if roll.get_comment() is None:
-                description += "{} = {}\n".format(roll.get_equation(), roll.get_sumtotal())
-            else:
-                description += "{} = {} for {}\n".format(roll.get_equation(), roll.get_sumtotal(), roll.get_comment())
+            description += "{} = {}\n".format(roll.get_equation(), roll.get_sumtotal())
 
         embed = discord.Embed(
             title=roll.get_comment(),
