@@ -20,7 +20,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS licorice
     (   ranking int, 
         flavor text, 
         link text, 
-        quote text)''')
+        quote text)''') 
 
 def add_roll(user=None, nick=None, argument=None, equation=None, result=None, stat=None, success=None, comment=None):
     # Insert a row of data
