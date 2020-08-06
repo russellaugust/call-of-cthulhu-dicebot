@@ -4,7 +4,7 @@ import random, time, datetime
 import database, diceroller
 import credentials as cred
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!', description="Call of Cthulhu Dicebot", help_command=None)
 
 @bot.event
 async def on_ready():
@@ -12,6 +12,7 @@ async def on_ready():
 
 @bot.command(pass_context=True)
 async def r(ctx, *, arg):
+    '''main roll command. this will allow the user to roll dice assuming some basic syntax is used.'''
     
     dice = diceroller.DiceRolls(arg)
     #description = "{}: ".format(ctx.author.mention)
@@ -47,6 +48,9 @@ async def r(ctx, *, arg):
             colour=discord.Colour(0x24ed60), 
             description=description
             )
+        print ("does {} == {} ?".format(int(roll.get_sumtotal()), int(roll.get_stat())))
+        if int(roll.get_sumtotal()) == int(roll.get_stat()):
+            embed.set_image(url="https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif")
     
     # PASS: this is every other roll condition.
     else:
@@ -65,12 +69,28 @@ async def r(ctx, *, arg):
 @bot.command()
 async def licorice(ctx):
     phrase = "Generic Licorice: It’s not like straight licorice!"
-    licorice_twist_ranking = ["Cherry", "Blue Raspberry", "Mixed Berry", "Tropical", "Blood Orange", "Raspberry", "Green Apple", "Watermelon", "Root Beer", "Peach", "Chocolate", "Red Licorice", "Black Licorice", "Pina Colada"]
-    await ctx.send("Ro Chooses: {}".format(random.choice(licorice_twist_ranking)))
+    licorice_twist_ranking = ["Cherry", "Blue Raspberry", "Mixed Berry", "Tropical", "Blood Orange", "Raspberry", "Green Apple", "Watermelon", "Root Beer", "Peach", "Chocolate", "Red", "Black", "Pina Colada"]
+    await ctx.send("Have you tasted the delicious: {} licorice?".format(random.choice(licorice_twist_ranking)))
 
 @bot.command()
 async def mystery(ctx):
     '''returns an image from ARE YOU AFRAID OF THE DARK in the same font.  THE MYSTERY OF THE BLAH BLAH BLAH'''
     '''this could also randomize images from various TV shows, but that might be more work.  Although do the AYAOTD typeface is probably equally difficult.'''
+
+@bot.command()
+async def help(ctx):
+    embed = discord.Embed(title="Help Menu", colour=discord.Colour(0xff6f00), url="https://github.com/russellaugust/call-of-cthulhu-dicebot", description="Commands available to you.")
+
+    embed.set_thumbnail(url="https://i.pinimg.com/originals/3d/26/47/3d2647dd3f2a03d33e149c8af1c80516.jpg")
+
+    embed.add_field(name="Rolling Dice", value="Below is some of the functionality of this bot.\n\n", inline=False)
+    embed.add_field(name="Rolling Against Stats", value="Example:\n\n*/r 1d100 45*\n*/r 45*\n\nReturns what you rolled and how successful the roll was. In the example, 45 is the stat you're rolling against like INT or CON.", inline=False)
+    embed.add_field(name="Standard Rolls", value="Examples:\n\n*/r 1d6*\n*/r 1d10+12*\n*2d4+1d6+5*\n\nReturns the results of your roll and completes the math.", inline=False)
+    embed.add_field(name="Comments", value="Examples:\n\n*/r 1d6 # int roll for my life*\n\nThis just adds a little context to your roll.  This also gets stored in the database!", inline=False)
+    embed.add_field(name="Repeating Rolls", value="Examples:\n\n*/r repeat(1d6+4 #comment, 5)*\n*/r repeat(45, 5)*\n\nThis will execute the roll as many times as in the second field. So 5 times in the above examples.  Unfortunately comments need to be inside the repeat command for now.", inline=False)
+
+
+    await ctx.send(embed=embed)
+
 
 bot.run(cred.discord_key) #Insert your bots token here
