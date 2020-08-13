@@ -33,6 +33,15 @@ class DiceResult:
     else:
       return None
 
+  def get_success_color(self):
+    total = self.get_sumtotal()
+    stat = self.get_stat()
+    if stat is not None:
+      success_color = self.success_status_color(total, int(stat))
+      return success_color
+    else:
+      return None
+
   def get_comment(self):
     return self.comment
   
@@ -55,6 +64,28 @@ class DiceResult:
     elif myroll > stat:
         result = 'fail'
     return result
+
+  def success_status_color(self, myroll, stat):
+    '''returns a color based on success level'''
+    result = 0xed0909
+    if myroll == 1:
+      result = 0xed0909 # critical
+    elif stat <= 50 and myroll >= 96:
+      result = 0xfc6805 # fumble
+    elif stat > 50 and myroll >= 99:
+      result = 0xfc6805 # fumble
+    elif myroll <= stat/5:
+      result = 0x05fc1a # extreme success
+    elif myroll <= stat/2:
+      result = 0x60ed09 # hard success
+    elif myroll < stat:
+      result = 0xb8ed09 # normal success
+    elif myroll == stat:
+      result = 0xed09d6 # lucky success
+    elif myroll > stat:
+      result = 0xed0909 # fail
+    return result
+  
 
 
 class DiceRolls:

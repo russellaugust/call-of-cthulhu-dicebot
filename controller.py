@@ -21,7 +21,7 @@ async def r(ctx, *, arg):
     # putting all results in the database.  It skips nothing, including failures and syntax errors!
     for roll in dice.getrolls():
         print("{} {} {} {} {} {} {} {}".format(ctx.author, ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
-        database.add_roll(str(ctx.author), ctx.author.nick, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment())
+        database.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment())
 
     # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
     if dice.getroll().get_sumtotal() == None:
@@ -42,13 +42,16 @@ async def r(ctx, *, arg):
     elif dice.getroll().get_success() is not None:
         for roll in dice.getrolls():
             description += "{} is a ***{}***\n".format(roll.get_sumtotal(), roll.get_success())
+        
+        colour = dice.getroll().get_success_color() if dice.get_roll_count() == 1 else 0x0968ed
                 
         embed = discord.Embed(
             title=roll.get_comment(),
-            colour=discord.Colour(0x24ed60), 
+            colour=discord.Colour(colour), 
             description=description
             )
-        print ("does {} == {} ?".format(int(roll.get_sumtotal()), int(roll.get_stat())))
+        
+        # if the state is a lucky success, show some fireworks!
         if int(roll.get_sumtotal()) == int(roll.get_stat()):
             embed.set_image(url="https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif")
     
@@ -89,8 +92,7 @@ async def help(ctx):
     embed.add_field(name="Comments", value="Examples:\n\n*/r 1d6 # int roll for my life*\n\nThis just adds a little context to your roll.  This also gets stored in the database!", inline=False)
     embed.add_field(name="Repeating Rolls", value="Examples:\n\n*/r repeat(1d6+4 #comment, 5)*\n*/r repeat(45, 5)*\n\nThis will execute the roll as many times as in the second field. So 5 times in the above examples.  Unfortunately comments need to be inside the repeat command for now.", inline=False)
 
-
-    await ctx.send(embed=embed)
+    await ctx.author.send(embed=embed)
 
 
 bot.run(cred.discord_key) #Insert your bots token here
