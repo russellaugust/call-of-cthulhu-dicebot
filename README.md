@@ -15,9 +15,9 @@ Example:
 Returns the results of your roll and completes the math.
 
 Examples:
-  */r 1d6*
+`  */r 1d6*
   */r 1d10+12*
-  *2d4+1d6+5*
+  *2d4+1d6+5*`
 
 ### Comments
 This just adds a little context to your roll.  This also gets stored in the database!
