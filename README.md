@@ -6,8 +6,9 @@ Below is some of the functionality of this bot.
 
 ### Rolling Against Stats:
 Returns what you rolled and how successful the roll was. In the example, 45 is the stat you're rolling against like INT or CON.
-Example:
-*/r 1d100 45*
+
+Example:\n
+*/r 1d100 45*\n
 */r 45*
 
 ### Standard Rolls
