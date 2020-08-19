@@ -23,14 +23,14 @@ Examples:
 This just adds a little context to your roll.  This also gets stored in the database!
 
 Examples:
-  */r 1d6 # int roll for my life*
+`/r 1d6 # int roll for my life`
 
 ### Repeating Rolls
 This will execute the roll as many times as in the second field. So 5 times in the above examples.  Unfortunately comments need to be inside the repeat command for now.
 
 Examples:
-  */r repeat(1d6+4 #comment, 5)*
-  */r repeat(45, 5)*
+`/r repeat(1d6+4 #comment, 5)`
+`/r repeat(45, 5)`
 
 ## Roadmap
 
