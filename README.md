@@ -16,7 +16,7 @@ Example:
 /r 45
 ```
 
-When rolled, the dicebot will give you the resulting roll, how successful the roll was, and a color that makes it clear if it was a good or bad roll (gradient from green to red).  The roll can be a
+The dicebot will give you the results of the roll, how successful the roll was, and a color that makes it clear if it was a good or bad (green to red).  The roll can be a
 critical, extreme success, hard success, success, lucky!, fail, or fumble.
 
 Or group plays with a house rule that if you roll your exact stat, it's LUCKY! and you gain one luck point.
