@@ -8,16 +8,16 @@ Below is some of the functionality of this bot.
 Returns what you rolled and how successful the roll was. In the example, 45 is the stat you're rolling against like INT or CON.
 
 Example:
-  */r 1d100 45*
-  */r 45*
+`/r 1d100 45`
+`/r 45`
 
 ### Standard Rolls
 Returns the results of your roll and completes the math.
 
 Examples:
-`  */r 1d6*
-  */r 1d10+12*
-  *2d4+1d6+5*`
+`/r 1d6`
+`/r 1d10+12`
+`/r 2d4+1d6+5`
 
 ### Comments
 This just adds a little context to your roll.  This also gets stored in the database!
