@@ -11,6 +11,11 @@ Example:
 `/r 1d100 45`
 `/r 45`
 
+These rolls could result in:
+
+`critical, extreme success, hard success, success, lucky!, fail, fumble`
+
+
 ### Standard Rolls
 Returns the results of your roll and completes the math.
 
