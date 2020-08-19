@@ -3,7 +3,7 @@ import sqlite3, time
 conn = sqlite3.connect('dicebot.db')
 c = conn.cursor()
 
-# Create table
+# Creates table if the tables don't exist.
 c.execute('''CREATE TABLE IF NOT EXISTS rolls
     (   _id INTEGER PRIMARY KEY,
         messagetime timestamp, 
@@ -16,28 +16,30 @@ c.execute('''CREATE TABLE IF NOT EXISTS rolls
         success text,
         comment text)''')
 
+# Creates table if the tables don't exist.
 c.execute('''CREATE TABLE IF NOT EXISTS licorice
     (   ranking int, 
         flavor text, 
         link text, 
         quote text)''') 
 
+# adds the player roll to the database.  Repeated rolls are separate entries.
 def add_roll(user=None, nick=None, argument=None, equation=None, result=None, stat=None, success=None, comment=None):
-    # Insert a row of data
     sql = "INSERT INTO rolls (messagetime, user, nick, argument, equation, result, stat, success, comment) VALUES (?,?,?,?,?,?,?,?,?)"
     values = (time.time(), user, nick, argument, equation, result, stat, success, comment)
     c.execute(sql,values)
     conn.commit()
 
+# Returns a list of entries base on date. Defaults to last entry.
 def get_entry(field, date_in=None, date_out=None, number_of_entries="1"):
-    return None
-
-def get_file_with_entries(date_in=None, date_out=None):
     '''if none and none, then return everything'''
     '''if none and date, then return everything from that date and before'''
     '''if date and none, then return everything from that date and after'''
     '''if date and date, then return everything between those two dates'''
 
+    return None # this does not work yet.
+
+# Generates a set of licorice flavors and adds them to the database.  This is meant to just be run once.
 def create_licorice():
     sql = '''INSERT INTO licorice (ranking, flavor, link, quote) VALUES (?,?,?,?)'''
     entries = [
@@ -61,6 +63,7 @@ def create_licorice():
         c.execute(sql,(entry))
         conn.commit()
 
+# Returns a random licorice flavor
 def get_random_licorice():
     x = c.execute('''
     SELECT flavor, link FROM licorice
@@ -68,13 +71,14 @@ def get_random_licorice():
     LIMIT 1;''')
     return x.fetchall()[0]
 
+# Honestly, I don't know what or why this exists yet.
 def close_db():
     conn.close()
 
+# This is what runs if you JUST run the database.py.  Its for testing or pre-loading data if needed.
 if __name__ == '__main__':
     create_licorice()
     #licorice = get_random_licorice()
     #print (licorice)
-    #description="*SPROÜTS!*   That's some bad syntax. Have a piece of [{} Licorice]({}) while you fix that syntax.".format(licorice[0], licorice[1])
     #print (description)
     #add_roll("Russell", "Russ", "1d6+34-4", "(3)+34-4", 33, 45, None)
