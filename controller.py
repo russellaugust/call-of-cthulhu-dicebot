@@ -4,7 +4,7 @@ import random, time, datetime
 import database, diceroller
 import credentials as cred
 
-bot = commands.Bot(command_prefix='.', description="Call of Cthulhu Dicebot", help_command=None)
+bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebot", help_command=None)
 
 @bot.event
 async def on_ready():
