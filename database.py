@@ -77,8 +77,10 @@ def close_db():
 
 # This is what runs if you JUST run the database.py.  Its for testing or pre-loading data if needed.
 if __name__ == '__main__':
-    create_licorice()
+    '''first load'''
+    #create_licorice()
     #licorice = get_random_licorice()
     #print (licorice)
-    #print (description)
     #add_roll("Russell", "Russ", "1d6+34-4", "(3)+34-4", 33, 45, None)
+
+    #get_entry(field=, date_in=, date_out=, number_of_entries="1")
