@@ -4,15 +4,18 @@ import random, time, datetime
 import database, diceroller
 import credentials as cred
 
-bot = commands.Bot(command_prefix='!', description="Call of Cthulhu Dicebot", help_command=None)
+bot = commands.Bot(command_prefix='.', description="Call of Cthulhu Dicebot", help_command=None)
 
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
 
 @bot.command(pass_context=True)
-async def r(ctx, *, arg):
+async def r(ctx, *, arg=None):
     '''main roll command. this will allow the user to roll dice assuming some basic syntax is used.'''
+    
+    if not arg:
+        arg = "1D100"
     
     dice = diceroller.DiceRolls(arg)
     #description = "{}: ".format(ctx.author.mention)
@@ -79,6 +82,15 @@ async def licorice(ctx):
 async def mystery(ctx):
     '''returns an image from ARE YOU AFRAID OF THE DARK in the same font.  THE MYSTERY OF THE BLAH BLAH BLAH'''
     '''this could also randomize images from various TV shows, but that might be more work.  Although do the AYAOTD typeface is probably equally difficult.'''
+
+@bot.command()
+async def examples(ctx):
+    '''displays examples of how all rolls look.'''
+    
+@bot.command()
+async def pocky(ctx):
+    '''displays examples of how all rolls look.'''
+    await ctx.send("Awaiting more data...")
 
 @bot.command()
 async def help(ctx):
