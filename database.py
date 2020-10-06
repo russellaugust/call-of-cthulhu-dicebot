@@ -1,46 +1,85 @@
 import sqlite3, time
+from datetime import datetime
 
-conn = sqlite3.connect('dicebot.db')
-c = conn.cursor()
+def initialize_db():
+    conn = sqlite3.connect('dicebot.db')
+    c = conn.cursor()
 
-# Creates table if the tables don't exist.
-c.execute('''CREATE TABLE IF NOT EXISTS rolls
-    (   _id INTEGER PRIMARY KEY,
-        messagetime timestamp, 
-        user text, 
-        nick text, 
-        argument text, 
-        equation text, 
-        result int,
-        stat int,
-        success text,
-        comment text)''')
+    # Creates table if the tables don't exist.
+    c.execute('''CREATE TABLE IF NOT EXISTS rolls
+        (   _id INTEGER PRIMARY KEY,
+            messagetime timestamp, 
+            user text, 
+            nick text, 
+            argument text, 
+            equation text, 
+            result int,
+            stat int,
+            success text,
+            comment text)''')
 
-# Creates table if the tables don't exist.
-c.execute('''CREATE TABLE IF NOT EXISTS licorice
-    (   ranking int, 
-        flavor text, 
-        link text, 
-        quote text)''') 
+    # Creates table if the tables don't exist.
+    c.execute('''CREATE TABLE IF NOT EXISTS licorice
+        (   ranking int, 
+            flavor text, 
+            link text, 
+            quote text)''')
+
+    conn.commit()
+    conn.close()
 
 # adds the player roll to the database.  Repeated rolls are separate entries.
 def add_roll(user=None, nick=None, argument=None, equation=None, result=None, stat=None, success=None, comment=None):
+    conn = sqlite3.connect('dicebot.db')
+    c = conn.cursor()
+
     sql = "INSERT INTO rolls (messagetime, user, nick, argument, equation, result, stat, success, comment) VALUES (?,?,?,?,?,?,?,?,?)"
     values = (time.time(), user, nick, argument, equation, result, stat, success, comment)
     c.execute(sql,values)
     conn.commit()
+    
+    conn.close()
 
-# Returns a list of entries base on date. Defaults to last entry.
-def get_entry(field, date_in=None, date_out=None, number_of_entries="1"):
-    '''if none and none, then return everything'''
-    '''if none and date, then return everything from that date and before'''
-    '''if date and none, then return everything from that date and after'''
-    '''if date and date, then return everything between those two dates'''
+# Returns a list of entries base on date. Defaults to last entry. -1 is all entries.
+def get_entry(date_in_epoch=0, date_out_epoch=None, number_of_entries=1):
+    conn = sqlite3.connect('dicebot.db')
+    c = conn.cursor()
+    conn.commit()
 
-    return None # this does not work yet.
+    # i don't think this is doing anything. maybe just a backup?
+    select_stmt = '''SELECT * FROM rolls ORDER BY messagetime DESC LIMIT (%s)''' % (number_of_entries,)
+
+    date_out_epoch = time.time()
+    if number_of_entries == -1:
+        select_stmt = '''SELECT * from rolls WHERE messagetime BETWEEN (%s) and (%s) ORDER BY messagetime''' % (date_in_epoch, date_out_epoch)
+    elif number_of_entries >= 0:
+        select_stmt = '''SELECT * from rolls WHERE messagetime BETWEEN (%s) and (%s) ORDER BY messagetime DESC LIMIT (%s)''' % (date_in_epoch, date_out_epoch, number_of_entries)
+
+    x = c.execute(select_stmt)
+    records = x.fetchall()
+
+    output = []
+    for record in records:
+        nick = record[3]
+        equation = record[5]
+        result = record[6]
+        stat = record[7]
+        success = record[8]
+        comment = "" if record[9] is None else record[9]
+
+        if success is not None:
+            output.append("**{}:** {} {} {} (Stat={})".format(nick, result, success, comment, stat))
+        else:
+            output.append("**{}:** {} {}".format(nick, result, comment))
+
+    conn.close()
+    return output
 
 # Generates a set of licorice flavors and adds them to the database.  This is meant to just be run once.
 def create_licorice():
+    conn = sqlite3.connect('dicebot.db')
+    c = conn.cursor()
+
     sql = '''INSERT INTO licorice (ranking, flavor, link, quote) VALUES (?,?,?,?)'''
     entries = [
         ('1', 'Cherry', 'https://shop.sprouts.com/product/53779/bulk-foods-cherry-twists', ''),
@@ -63,21 +102,36 @@ def create_licorice():
         c.execute(sql,(entry))
         conn.commit()
 
+    conn.close()
+
 # Returns a random licorice flavor
 def get_random_licorice():
+    conn = sqlite3.connect('dicebot.db')
+    c = conn.cursor()
+
     x = c.execute('''
     SELECT flavor, link FROM licorice
     ORDER BY random() 
     LIMIT 1;''')
-    return x.fetchall()[0]
 
-# Honestly, I don't know what or why this exists yet.
-def close_db():
+    randomflavor = x.fetchall()[0]
+
     conn.close()
+   
+    return randomflavor
 
 # This is what runs if you JUST run the database.py.  Its for testing or pre-loading data if needed.
 if __name__ == '__main__':
     '''first load'''
+    date_in = datetime(2020, 9, 10, 23, 55, 59).timestamp()
+    date_out = datetime(2020, 8, 13, 23, 55, 59).timestamp()
+
+    add_roll("Russell6", "Russ6", "1d6+34-4", "(3)+34-4", 33, 45, None)
+
+    #get_entry(date_in_epoch=date_in, date_out_epoch=date_out, number_of_entries=-1)
+    for record in get_entry(number_of_entries=10):
+        print (record)
+
     #create_licorice()
     #licorice = get_random_licorice()
     #print (licorice)
