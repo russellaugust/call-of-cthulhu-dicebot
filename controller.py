@@ -3,6 +3,7 @@ from discord.ext import commands
 import random, time, datetime
 import database, diceroller
 import credentials as cred
+import mathtools
 
 bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebot", help_command=None)
 
@@ -14,6 +15,7 @@ async def on_ready():
 async def r(ctx, *, arg=None):
     '''main roll command. this will allow the user to roll dice assuming some basic syntax is used.'''
     
+    # if the user only types the command !r, it roll a 1d100
     if not arg:
         arg = "1D100"
     
@@ -57,6 +59,13 @@ async def r(ctx, *, arg=None):
         # if the state is a lucky success, show some fireworks!
         if int(roll.get_sumtotal()) == int(roll.get_stat()):
             embed.set_image(url="https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif")
+
+        elif int(roll.get_sumtotal()) == int(1):
+            embed.set_image(url="https://media.giphy.com/media/hSoZSJanVL4k9fVz0e/giphy.gif")
+            #embed.set_image(url="https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif")
+        
+        elif int(roll.get_sumtotal()) == int(100):
+            embed.set_image(url="https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif")
     
     # PASS: this is every other roll condition.
     else:
@@ -72,6 +81,27 @@ async def r(ctx, *, arg=None):
     embed.set_author(name=ctx.author.display_name, url=database.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)
     await ctx.send(embed=embed)
 
+@bot.command(pass_context=True)
+async def lastrolls(ctx, *, arg=None):
+
+    if mathtools.RepresentsInt(arg): #is the argument an integer value
+        rolls = database.get_entry(number_of_entries=int(arg))
+        description = "LAST ROLLS\n"
+        for roll in rolls:
+            print (roll)
+            description += "{}\n".format(roll)
+
+        embed = discord.Embed(
+            colour=discord.Colour(0x24ed60), 
+            description=description
+            )
+
+        await ctx.send(embed=embed)
+    
+    else:
+        await ctx.send("bad syntax.")
+
+
 @bot.command()
 async def licorice(ctx):
     phrase = "Generic Licorice: It’s not like straight licorice!"
@@ -84,13 +114,24 @@ async def mystery(ctx):
     '''this could also randomize images from various TV shows, but that might be more work.  Although do the AYAOTD typeface is probably equally difficult.'''
 
 @bot.command()
-async def examples(ctx):
-    '''displays examples of how all rolls look.'''
+async def testing(ctx):
+    '''Returns the number you enter to emulate a roll for testing.'''
     
 @bot.command()
 async def pocky(ctx):
-    '''displays examples of how all rolls look.'''
+    '''Returns a thing about pocky flavors.'''
     await ctx.send("Awaiting more data...")
+
+@bot.command()
+async def whocares(ctx):
+    '''who cares about me, based on that one chart.'''
+    await ctx.send("Awaiting more data...")
+
+@bot.command()
+async def icare(ctx):
+    '''who cares about me, based on that one chart.'''
+    await ctx.send("Awaiting more data...")
+
 
 @bot.command()
 async def help(ctx):
