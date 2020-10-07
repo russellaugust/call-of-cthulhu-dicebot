@@ -9,7 +9,7 @@ bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebo
 
 @bot.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(bot))
+    print('Logged in as {0.user}... we are alive!'.format(bot))
 
 @bot.command(pass_context=True)
 async def r(ctx, *, arg=None):
@@ -26,7 +26,12 @@ async def r(ctx, *, arg=None):
     # putting all results in the database.  It skips nothing, including failures and syntax errors!
     for roll in dice.getrolls():
         print("{} {} {} {} {} {} {} {} {} {}".format(ctx.guild, ctx.channel, ctx.author, ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
-        database.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment())
+
+        # comment that keeps the roll of the db for testing purposes
+        if dice.getroll().get_comment() is not None:
+            if "^test" not in dice.getroll().get_comment():
+                print ("Roll added to Database!")
+                database.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment())
 
     # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
     if dice.getroll().get_sumtotal() == None:
