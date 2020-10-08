@@ -29,11 +29,11 @@ async def r(ctx, *, arg=None):
     for roll in dice.getrolls():
         print("{} {} {} {} {} {} {} {} {} {}".format(ctx.guild, ctx.channel, ctx.author, ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
 
-        # comment that keeps the roll of the db for testing purposes
-        if dice.getroll().get_comment() is not None:
-            if "^test" not in dice.getroll().get_comment():
-                print ("Roll added to Database!")
-                database.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment())
+        # if ^test is present in the comment, the roll will not be store in the db (for testing purposes)
+        if dice.getroll().get_comment() is not None and "^test" in dice.getroll().get_comment():
+            print ("Roll NOT added to Database!")
+        else:
+            database.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment(), str(ctx.guild), str(ctx.channel))
 
     # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
     if dice.getroll().get_sumtotal() == None:
