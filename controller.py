@@ -229,7 +229,7 @@ async def vocalroll(ctx, *, text=None):
 
     try:
         # Lets play that mp3 file in the voice channel
-        vc.play(discord.FFmpegPCMAudio('text.mp3'), after=lambda e: print(f"Finished playing: {e}"))
+        vc.play(discord.FFmpegPCMAudio('audio/text.mp3'), after=lambda e: print(f"Finished playing: {e}"))
         #vc.play(discord.FFmpegPCMAudio('audio/god.mp3'), after=lambda e: print(f"Finished playing: {e}"))
 
         # Lets set the volume to 1
