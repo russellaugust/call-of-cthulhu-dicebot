@@ -138,3 +138,5 @@ playground*
 holding*
 test*
 .DS_Store*
+/backup
+/audio
