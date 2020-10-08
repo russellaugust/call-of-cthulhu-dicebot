@@ -16,7 +16,9 @@ def initialize_db():
             result int,
             stat int,
             success text,
-            comment text)''')
+            comment text,
+            guild text,
+            channel text)''')
 
     # Creates table if the tables don't exist.
     c.execute('''CREATE TABLE IF NOT EXISTS licorice
@@ -29,15 +31,14 @@ def initialize_db():
     conn.close()
 
 # adds the player roll to the database.  Repeated rolls are separate entries.
-def add_roll(user=None, nick=None, argument=None, equation=None, result=None, stat=None, success=None, comment=None):
+def add_roll(user=None, nick=None, argument=None, equation=None, result=None, stat=None, success=None, comment=None, guild=None, channel=None):
     conn = sqlite3.connect('dicebot.db')
     c = conn.cursor()
 
-    sql = "INSERT INTO rolls (messagetime, user, nick, argument, equation, result, stat, success, comment) VALUES (?,?,?,?,?,?,?,?,?)"
-    values = (time.time(), user, nick, argument, equation, result, stat, success, comment)
+    sql = "INSERT INTO rolls (messagetime, user, nick, argument, equation, result, stat, success, comment, guild, channel) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+    values = (time.time(), user, nick, argument, equation, result, stat, success, comment, guild, channel)
     c.execute(sql,values)
     conn.commit()
-    
     conn.close()
 
 # Returns a list of entries base on date. Defaults to last entry. -1 is all entries.
@@ -126,11 +127,11 @@ if __name__ == '__main__':
     date_in = datetime(2020, 9, 10, 23, 55, 59).timestamp()
     date_out = datetime(2020, 8, 13, 23, 55, 59).timestamp()
 
-    add_roll("Russell6", "Russ6", "1d6+34-4", "(3)+34-4", 33, 45, None)
+    #add_roll("Russell6", "Russ6", "1d6+34-4", "(3)+34-4", 33, 45, None)
 
     #get_entry(date_in_epoch=date_in, date_out_epoch=date_out, number_of_entries=-1)
-    for record in get_entry(number_of_entries=10):
-        print (record)
+    #for record in get_entry(number_of_entries=10):
+    #    print (record)
 
     #create_licorice()
     #licorice = get_random_licorice()
