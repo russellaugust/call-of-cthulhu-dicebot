@@ -1,9 +1,11 @@
 import discord
 from discord.ext import commands
-import random, time, datetime
+import random, time, datetime, asyncio
 import database, diceroller
 import credentials as cred
 import mathtools
+from gtts import gTTS
+import ffmpeg
 
 bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebot", help_command=None)
 
@@ -23,7 +25,7 @@ async def r(ctx, *, arg=None):
     #description = "{}: ".format(ctx.author.mention)
     description = ""
 
-    # putting all results in the database.  It skips nothing, including failures and syntax errors!
+    # putting all results in the database.  It skips when there's nothing, including failures and syntax errors!
     for roll in dice.getrolls():
         print("{} {} {} {} {} {} {} {} {} {}".format(ctx.guild, ctx.channel, ctx.author, ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
 
@@ -109,7 +111,6 @@ async def lastrolls(ctx, *, arg=None):
 
 @bot.command()
 async def licorice(ctx):
-    phrase = "Generic Licorice: It’s not like straight licorice!"
     licorice_twist_ranking = ["Cherry", "Blue Raspberry", "Mixed Berry", "Tropical", "Blood Orange", "Raspberry", "Green Apple", "Watermelon", "Root Beer", "Peach", "Chocolate", "Red", "Black", "Pina Colada"]
     await ctx.send("Have you tasted the delicious: {} licorice?".format(random.choice(licorice_twist_ranking)))
 
@@ -120,7 +121,7 @@ async def mystery(ctx):
 
 @bot.command()
 async def testing(ctx):
-    '''Returns the number you enter to emulate a roll for testing.'''
+    '''General area for testing.'''
     
 @bot.command()
 async def pocky(ctx):
@@ -138,6 +139,130 @@ async def icare(ctx):
     await ctx.send("Awaiting more data...")
 
 
+# Voice Channel Section
+class VoiceConnectionError(commands.CommandError):
+    pass
+
+class InvalidVoiceChannel(VoiceConnectionError):
+    pass
+
+@bot.command()
+async def connect(ctx, *, channel: discord.VoiceChannel=None):
+    """
+    Connect to a voice channel
+    This command also handles moving the bot to different channels.
+
+    Params:
+    - channel: discord.VoiceChannel [Optional]
+        The channel to connect to. If a channel is not specified, an attempt to join the voice channel you are in
+        will be made.
+    """
+    if not channel:
+        try:
+            channel = ctx.author.voice.channel
+        except AttributeError:
+            raise InvalidVoiceChannel('No channel to join. Please either specify a valid channel or join one.')
+
+    vc = ctx.voice_client
+
+    if vc:
+        if vc.channel.id == channel.id:
+            return
+        try:
+            await vc.move_to(channel)
+        except asyncio.TimeoutError:
+            raise VoiceConnectionError(f'Moving to channel: <{channel}> timed out.')
+    else:
+        try:
+            await channel.connect()
+        except asyncio.TimeoutError:
+            raise VoiceConnectionError(f'Connecting to channel: <{channel}> timed out.')
+
+    await ctx.send(f'Connected to: **{channel}**', delete_after=20)
+
+@bot.command()
+async def disconnect(ctx):
+    """
+    Disconnect from a voice channel, if in one
+    """
+    vc = ctx.voice_client
+
+    if not vc:
+        await ctx.send("I am not in a voice channel.")
+        return
+
+    await vc.disconnect()
+    await ctx.send("I have left the voice channel!")
+
+@bot.command()
+async def vocalroll(ctx, *, text=None):
+    """
+    A command which saves `text` into a speech file with
+    gtts and then plays it back in the current voice channel.
+
+    Params:
+     - text [Optional]
+        This will be the text we speak in the voice channel
+    """
+    if not text:
+        # We have nothing to speak
+        await ctx.send(f"Hey {ctx.author.mention}, I need to know what to say please.")
+        return
+
+    vc = ctx.voice_client # We use it more then once, so make it an easy variable
+    if not vc:
+        # We are not currently in a voice channel
+        await ctx.send("I need to be in a voice channel to do this, please use the connect command.")
+        return
+    
+    # get dice roll
+    dice = diceroller.DiceRolls(text)
+
+    sumtotal = dice.getroll().get_sumtotal() if dice.getroll().get_sumtotal() is not None else ""
+    success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
+
+    readout = "You rolled {}. that's a {}".format(sumtotal, success)
+
+    # Lets prepare our text, and then save the audio file
+    tts = gTTS(text=readout, lang="en")
+    tts.save("text.mp3")
+
+    try:
+        # Lets play that mp3 file in the voice channel
+        vc.play(discord.FFmpegPCMAudio('text.mp3'), after=lambda e: print(f"Finished playing: {e}"))
+        #vc.play(discord.FFmpegPCMAudio('audio/god.mp3'), after=lambda e: print(f"Finished playing: {e}"))
+
+        # Lets set the volume to 1
+        vc.source = discord.PCMVolumeTransformer(vc.source)
+        vc.source.volume = 1
+
+    # Handle the exceptions that can occur
+    except ClientException as e:
+        await ctx.send(f"A client exception occured:\n`{e}`")
+    except TypeError as e:
+        await ctx.send(f"TypeError exception:\n`{e}`")
+    except OpusNotLoaded as e:
+        await ctx.send(f"OpusNotLoaded exception: \n`{e}`")
+
+@bot.command(name="demoing")
+async def demoing(ctx):
+    # Gets voice channel of message author
+    voice_channel = ctx.author.channel
+    if voice_channel != None:
+        channel = voice_channel.name
+        vc = await voice_channel.connect()
+        #vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source="C:<path_to_file>"))
+        print ("okay something worked")
+        # Sleep while audio is playing.
+        while vc.is_playing():
+            time.sleep(.1)
+        await vc.disconnect()
+    else:
+        await ctx.send(str(ctx.author.name) + "is not in a channel.")
+    # Delete command after the audio is done playing.
+    await ctx.message.delete()
+
+# Help Only
 @bot.command()
 async def help(ctx):
     embed = discord.Embed(title="Help Menu", colour=discord.Colour(0xff6f00), url="https://github.com/russellaugust/call-of-cthulhu-dicebot", description="Commands available to you.")
