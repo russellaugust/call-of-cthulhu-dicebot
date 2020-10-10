@@ -1,5 +1,6 @@
 import sqlite3, time
 from datetime import datetime
+import diceroller
 
 def initialize_db():
     conn = sqlite3.connect('dicebot.db')
@@ -41,8 +42,52 @@ def add_roll(user=None, nick=None, argument=None, equation=None, result=None, st
     conn.commit()
     conn.close()
 
+def get_as_rolls(date_in_epoch=0, date_out_epoch=None, number_of_entries=1, requested_user=None, requested_guild=None, requested_channel=None):
+    conn = sqlite3.connect('dicebot.db')
+    c = conn.cursor()
+    conn.commit()
+
+    # i don't think this is doing anything. maybe just a backup?
+    select_stmt = '''SELECT * FROM rolls ORDER BY messagetime DESC LIMIT (%s)''' % (number_of_entries,)
+
+    date_out_epoch = time.time() if date_out_epoch is None else date_out_epoch
+    if number_of_entries == -1:
+        select_stmt = '''SELECT * from rolls WHERE messagetime BETWEEN (%s) and (%s) ORDER BY messagetime''' % (date_in_epoch, date_out_epoch)
+    elif number_of_entries >= 0:
+        select_stmt = '''SELECT * from rolls WHERE messagetime BETWEEN (%s) and (%s) ORDER BY messagetime DESC LIMIT (%s)''' % (date_in_epoch, date_out_epoch, number_of_entries)
+
+    x = c.execute(select_stmt)
+    records = x.fetchall()
+
+    rolls = []
+    for record in records:
+        messagetime = record[1]
+        user = record[2]
+        nick = record[3]
+        argument = record[4]
+        equation = record[5]
+        result = record[6]
+        stat = record[7]
+        success = record[8]
+        comment = record[9]
+        guild = record[10]
+        channel = record[11]
+
+        #print ("{} == {}".format(user, requested_user))
+        #print ("{} == {}".format(guild, requested_guild))
+        #print ("{} == {}".format(channel, requested_channel))
+        # checks if user/guild/channel is None or equal, and then allows it.  All entries need to match in order for it to save an entry
+        if (requested_user is None or requested_user == user) and (requested_guild is None or guild == requested_guild) and (requested_channel is None or channel == requested_channel):
+            print (user)
+            roll = diceroller.DiceResult(argument=argument, equation=equation, sumtotal=result, stat=stat, comment=comment, timestamp=messagetime)
+            rolls.append(roll)
+
+
+    conn.close()
+    return rolls
+
 # Returns a list of entries base on date. Defaults to last entry. -1 is all entries.
-def get_entry(date_in_epoch=0, date_out_epoch=None, number_of_entries=1):
+def get_entries_as_string(date_in_epoch=0, date_out_epoch=None, number_of_entries=1):
     conn = sqlite3.connect('dicebot.db')
     c = conn.cursor()
     conn.commit()
@@ -67,6 +112,8 @@ def get_entry(date_in_epoch=0, date_out_epoch=None, number_of_entries=1):
         stat = record[7]
         success = record[8]
         comment = "" if record[9] is None else record[9]
+        guild = record[10]
+        channel = record[11]
 
         if success is not None:
             output.append("**{}:** {} {} {} (Stat={})".format(nick, result, success, comment, stat))
@@ -129,8 +176,8 @@ if __name__ == '__main__':
 
     #add_roll("Russell6", "Russ6", "1d6+34-4", "(3)+34-4", 33, 45, None)
 
-    #get_entry(date_in_epoch=date_in, date_out_epoch=date_out, number_of_entries=-1)
-    #for record in get_entry(number_of_entries=10):
+    #get_entries_as_string(date_in_epoch=date_in, date_out_epoch=date_out, number_of_entries=-1)
+    #for record in get_entries_as_string(number_of_entries=10):
     #    print (record)
 
     #create_licorice()
@@ -138,4 +185,4 @@ if __name__ == '__main__':
     #print (licorice)
     #add_roll("Russell", "Russ", "1d6+34-4", "(3)+34-4", 33, 45, None)
 
-    #get_entry(field=, date_in=, date_out=, number_of_entries="1")
+    #get_entries_as_string(field=, date_in=, date_out=, number_of_entries="1")
