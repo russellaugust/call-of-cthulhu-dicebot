@@ -92,7 +92,7 @@ async def r(ctx, *, arg=None):
 async def lastrolls(ctx, *, arg=None):
 
     if mathtools.RepresentsInt(arg): #is the argument an integer value
-        rolls = database.get_entry(number_of_entries=int(arg))
+        rolls = database.get_entries_as_string(number_of_entries=int(arg))
         description = "LAST ROLLS\n"
         for roll in rolls:
             print (roll)
