@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.utils import get
 import random, time, datetime, asyncio
 import database, diceroller
 import credentials as cred
@@ -108,7 +109,6 @@ async def lastrolls(ctx, *, arg=None):
     else:
         await ctx.send("bad syntax.")
 
-
 @bot.command()
 async def licorice(ctx):
     licorice_twist_ranking = ["Cherry", "Blue Raspberry", "Mixed Berry", "Tropical", "Blood Orange", "Raspberry", "Green Apple", "Watermelon", "Root Beer", "Peach", "Chocolate", "Red", "Black", "Pina Colada"]
@@ -122,7 +122,35 @@ async def mystery(ctx):
 @bot.command()
 async def testing(ctx):
     '''General area for testing.'''
-    
+    '''test a reaction tool for polling / answering requests'''
+
+    embed = discord.Embed(title="testing", colour=discord.Colour(0xbf1919), description="description")
+
+    msg = await ctx.send(ctx.message.channel,embed=embed)
+
+    # no ID, do a lookup, this is only for guild
+    emoji = discord.utils.get(ctx.guild.emojis, name='geoffquadfist')
+    if emoji:
+        await msg.add_reaction(emoji)
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    '''Performs an action when a someone reacts to a message'''
+    '''Note: this will only respond to messages in current bot history.  it will not trigger on messages prior to running'''
+    if user != bot.user:
+        channel = reaction.message.channel
+        print('not the bot, someone else')
+        ctx = await bot.get_context(reaction.message)
+        await ctx.send('{} has added {} to the the message {}'.format(user.name, reaction.emoji, reaction.message.content))
+
+    #await bot.process_commands(reaction.message)
+
+# @bot.event
+# async def on_message(message):
+#     ctx = await bot.get_context(message)
+#     await ctx.send("i'll respond to everything.")
+#     await bot.process_commands(message)
+     
 @bot.command()
 async def pocky(ctx):
     '''Returns a thing about pocky flavors.'''
