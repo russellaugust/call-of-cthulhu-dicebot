@@ -140,3 +140,4 @@ test*
 .DS_Store*
 /backup
 /audio
+/venv-mac
