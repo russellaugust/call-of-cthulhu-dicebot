@@ -73,9 +73,6 @@ def get_as_rolls(date_in_epoch=0, date_out_epoch=None, number_of_entries=1, requ
         guild = record[10]
         channel = record[11]
 
-        #print ("{} == {}".format(user, requested_user))
-        #print ("{} == {}".format(guild, requested_guild))
-        #print ("{} == {}".format(channel, requested_channel))
         # checks if user/guild/channel is None or equal, and then allows it.  All entries need to match in order for it to save an entry
         if (requested_user is None or requested_user == user) and (requested_guild is None or guild == requested_guild) and (requested_channel is None or channel == requested_channel):
             print (user)
