@@ -1,0 +1,3 @@
+announce: false
+card location: /mnt/path
+database location: /mnt/database/path/name.db
