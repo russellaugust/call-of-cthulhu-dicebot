@@ -69,8 +69,8 @@ async def r(ctx, *, arg=None):
             embed.set_image(url="https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif")
 
         elif int(roll.get_sumtotal()) == int(1):
-            embed.set_image(url="https://media.giphy.com/media/hSoZSJanVL4k9fVz0e/giphy.gif")
-            #embed.set_image(url="https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif")
+            #embed.set_image(url="https://media.giphy.com/media/hSoZSJanVL4k9fVz0e/giphy.gif")
+            embed.set_image(url="https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif")
         
         elif int(roll.get_sumtotal()) == int(100):
             embed.set_image(url="https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif")
@@ -113,11 +113,21 @@ async def lastrolls(ctx, *, arg=None):
 async def licorice(ctx):
     licorice_twist_ranking = ["Cherry", "Blue Raspberry", "Mixed Berry", "Tropical", "Blood Orange", "Raspberry", "Green Apple", "Watermelon", "Root Beer", "Peach", "Chocolate", "Red", "Black", "Pina Colada"]
     await ctx.send("Have you tasted the delicious: {} licorice?".format(random.choice(licorice_twist_ranking)))
+     
+@bot.command()
+async def pocky(ctx):
+    '''Returns a thing about pocky flavors.'''
+    await ctx.send("Awaiting more data...")
 
 @bot.command()
-async def mystery(ctx):
-    '''returns an image from ARE YOU AFRAID OF THE DARK in the same font.  THE MYSTERY OF THE BLAH BLAH BLAH'''
-    '''this could also randomize images from various TV shows, but that might be more work.  Although do the AYAOTD typeface is probably equally difficult.'''
+async def whocares(ctx):
+    '''who cares about me, based on that one chart.'''
+    await ctx.send("Awaiting more data...")
+
+@bot.command()
+async def icare(ctx):
+    '''who cares about me, based on that one chart.'''
+    await ctx.send("Awaiting more data...")
 
 @bot.command()
 async def testing(ctx):
@@ -139,7 +149,6 @@ async def on_reaction_add(reaction, user):
     '''Note: this will only respond to messages in current bot history.  it will not trigger on messages prior to running'''
     if user != bot.user:
         channel = reaction.message.channel
-        print('not the bot, someone else')
         ctx = await bot.get_context(reaction.message)
         await ctx.send('{} has added {} to the the message {}'.format(user.name, reaction.emoji, reaction.message.content))
 
@@ -150,21 +159,6 @@ async def on_reaction_add(reaction, user):
 #     ctx = await bot.get_context(message)
 #     await ctx.send("i'll respond to everything.")
 #     await bot.process_commands(message)
-     
-@bot.command()
-async def pocky(ctx):
-    '''Returns a thing about pocky flavors.'''
-    await ctx.send("Awaiting more data...")
-
-@bot.command()
-async def whocares(ctx):
-    '''who cares about me, based on that one chart.'''
-    await ctx.send("Awaiting more data...")
-
-@bot.command()
-async def icare(ctx):
-    '''who cares about me, based on that one chart.'''
-    await ctx.send("Awaiting more data...")
 
 
 # Voice Channel Section
@@ -258,7 +252,6 @@ async def vocalroll(ctx, *, text=None):
     try:
         # Lets play that mp3 file in the voice channel
         vc.play(discord.FFmpegPCMAudio('audio/text.mp3'), after=lambda e: print(f"Finished playing: {e}"))
-        #vc.play(discord.FFmpegPCMAudio('audio/god.mp3'), after=lambda e: print(f"Finished playing: {e}"))
 
         # Lets set the volume to 1
         vc.source = discord.PCMVolumeTransformer(vc.source)
