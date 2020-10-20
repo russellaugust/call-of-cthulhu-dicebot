@@ -4,7 +4,7 @@ UNARY_OPS = (ast.UAdd, ast.USub)
 BINARY_OPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod)
 
 class DiceResult:
-  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None):
+  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None):
     '''this will eventually be an additional class that holds the results of rolls since there's a possible scenario for multi-rolling'''
     self.argument = argument
     self.equation = equation
@@ -14,6 +14,8 @@ class DiceResult:
     self.timestamp = timestamp
     self.user = user
     self.nick = nick
+    self.channel = channel
+    self.guild = guild
 
   def get_timestamp(self):
     return self.timestamp
@@ -36,6 +38,18 @@ class DiceResult:
 
   def get_stat(self):
     return self.stat
+
+  def get_user(self):
+    return self.user
+
+  def get_nick(self):
+    return self.nick
+
+  def get_channel(self):
+    return self.channel
+
+  def get_guild(self):
+    return self.guild
 
   def get_success(self):
     total = self.get_sumtotal()
