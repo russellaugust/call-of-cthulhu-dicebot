@@ -102,13 +102,13 @@ async def r(ctx, *, arg=None):
                 vc.source = discord.PCMVolumeTransformer(vc.source)
                 vc.source.volume = 1
 
-            # Handle the exceptions that can occur
-            except ClientException as e:
-                await ctx.send(f"A client exception occured:\n`{e}`")
+            # Handle the exceptions that can occur, i don't entirely understand this though, so I commented it out
+            #except ClientException as e:
+            #    await ctx.send(f"A client exception occured:\n`{e}`")
             except TypeError as e:
                 await ctx.send(f"TypeError exception:\n`{e}`")
-            except OpusNotLoaded as e:
-                await ctx.send(f"OpusNotLoaded exception: \n`{e}`")            
+            #except OpusNotLoaded as e:
+            #    await ctx.send(f"OpusNotLoaded exception: \n`{e}`")            
     
     # PASS: this is every other roll condition.
     else:
