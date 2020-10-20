@@ -1,3 +1,4 @@
 announce: false
-card location: /mnt/path
-database location: /mnt/database/path/name.db
+audio_rolls_path: audio/
+card_path: images/cards/
+database_path: dicebot.db
