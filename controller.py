@@ -1,14 +1,21 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
-import random, time, datetime, asyncio
-import database, diceroller
-import credentials as cred
-import mathtools
+
 from gtts import gTTS
 import ffmpeg
+from slugify import slugify
+
+import random, time, datetime, asyncio
+from database import Database
+import diceroller
+import credentials as cred
+from settings import Settings
+import mathtools
 
 bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebot", help_command=None)
+settings = Settings()
+db = Database(settings.database_path)
 
 @bot.event
 async def on_ready():
@@ -17,7 +24,7 @@ async def on_ready():
 @bot.command(pass_context=True)
 async def r(ctx, *, arg=None):
     '''main roll command. this will allow the user to roll dice assuming some basic syntax is used.'''
-    
+
     # if the user only types the command !r, it roll a 1d100
     if not arg:
         arg = "1D100"
@@ -34,11 +41,11 @@ async def r(ctx, *, arg=None):
         if dice.getroll().get_comment() is not None and "^test" in dice.getroll().get_comment():
             print ("Roll NOT added to Database!")
         else:
-            database.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment(), str(ctx.guild), str(ctx.channel))
+            db.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment(), str(ctx.guild), str(ctx.channel))
 
     # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
     if dice.getroll().get_sumtotal() == None:
-        licorice = database.get_random_licorice()
+        licorice = db.get_random_licorice()
         embed = discord.Embed(
             colour=discord.Colour(0xbf1919), 
             description="*SPROÜTS!*   That's some bad syntax. Have a piece of [{} Licorice]({}) while you fix that.".format(licorice[0], licorice[1]), 
@@ -56,6 +63,7 @@ async def r(ctx, *, arg=None):
         for roll in dice.getrolls():
             description += "{} is a ***{}***\n".format(roll.get_sumtotal(), roll.get_success())
         
+        # sets the color to the level of success. if there's more than 1 roll, then use a special color
         colour = dice.getroll().get_success_color() if dice.get_roll_count() == 1 else 0x0968ed
                 
         embed = discord.Embed(
@@ -74,6 +82,33 @@ async def r(ctx, *, arg=None):
         
         elif int(roll.get_sumtotal()) == int(100):
             embed.set_image(url="https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif")
+
+        if settings.announce:
+            vc = ctx.voice_client # We use it more then once, so make it an easy variable
+            if not vc:
+                await ctx.send("I need to be in a voice channel to do this, please use the connect command.")
+                return
+            
+            success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
+
+            filename = slugify(success, lowercase=True)
+            path = 'audio/{}.mp3'.format(filename)
+
+            try:
+                # Lets play that mp3 file in the voice channel
+                vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print(f"Finished playing: {e}"))
+
+                # Lets set the volume to 1
+                vc.source = discord.PCMVolumeTransformer(vc.source)
+                vc.source.volume = 1
+
+            # Handle the exceptions that can occur
+            except ClientException as e:
+                await ctx.send(f"A client exception occured:\n`{e}`")
+            except TypeError as e:
+                await ctx.send(f"TypeError exception:\n`{e}`")
+            except OpusNotLoaded as e:
+                await ctx.send(f"OpusNotLoaded exception: \n`{e}`")            
     
     # PASS: this is every other roll condition.
     else:
@@ -86,14 +121,14 @@ async def r(ctx, *, arg=None):
             description=description
             )
 
-    embed.set_author(name=ctx.author.display_name, url=database.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)
+    embed.set_author(name=ctx.author.display_name, url=db.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)
     await ctx.send(embed=embed)
 
 @bot.command(pass_context=True)
 async def lastrolls(ctx, *, arg=None):
 
     if mathtools.RepresentsInt(arg): #is the argument an integer value
-        rolls = database.get_entries_as_string(number_of_entries=int(arg))
+        rolls = db.get_entries_as_string(number_of_entries=int(arg))
         description = "LAST ROLLS\n"
         for roll in rolls:
             print (roll)
@@ -108,6 +143,14 @@ async def lastrolls(ctx, *, arg=None):
     
     else:
         await ctx.send("bad syntax.")
+
+@bot.command(pass_context=True)
+async def announce(ctx, *, arg=None):
+    if mathtools.RepresentsBool(arg): #is the arg string a boolean value
+        settings.announce = mathtools.convertToBool(arg)
+        await ctx.send("Announce Rolls in Voice Chat is now set to {}".format(arg))
+    else:
+        await ctx.send("Invalid Syntax: {}".format(arg))
 
 @bot.command()
 async def licorice(ctx):
@@ -143,6 +186,8 @@ async def testing(ctx):
     if emoji:
         await msg.add_reaction(emoji)
 
+
+# Events in this section monitor all new incoming messages
 @bot.event
 async def on_reaction_add(reaction, user):
     '''Performs an action when a someone reacts to a message'''
@@ -215,55 +260,6 @@ async def disconnect(ctx):
 
     await vc.disconnect()
     await ctx.send("I have left the voice channel!")
-
-@bot.command()
-async def vocalroll(ctx, *, text=None):
-    """
-    A command which saves `text` into a speech file with
-    gtts and then plays it back in the current voice channel.
-
-    Params:
-     - text [Optional]
-        This will be the text we speak in the voice channel
-    """
-    if not text:
-        # We have nothing to speak
-        await ctx.send(f"Hey {ctx.author.mention}, I need to know what to say please.")
-        return
-
-    vc = ctx.voice_client # We use it more then once, so make it an easy variable
-    if not vc:
-        # We are not currently in a voice channel
-        await ctx.send("I need to be in a voice channel to do this, please use the connect command.")
-        return
-    
-    # get dice roll
-    dice = diceroller.DiceRolls(text)
-
-    sumtotal = dice.getroll().get_sumtotal() if dice.getroll().get_sumtotal() is not None else ""
-    success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
-
-    readout = "You rolled {}. that's a {}".format(sumtotal, success)
-
-    # Lets prepare our text, and then save the audio file
-    tts = gTTS(text=readout, lang="en")
-    tts.save("text.mp3")
-
-    try:
-        # Lets play that mp3 file in the voice channel
-        vc.play(discord.FFmpegPCMAudio('audio/text.mp3'), after=lambda e: print(f"Finished playing: {e}"))
-
-        # Lets set the volume to 1
-        vc.source = discord.PCMVolumeTransformer(vc.source)
-        vc.source.volume = 1
-
-    # Handle the exceptions that can occur
-    except ClientException as e:
-        await ctx.send(f"A client exception occured:\n`{e}`")
-    except TypeError as e:
-        await ctx.send(f"TypeError exception:\n`{e}`")
-    except OpusNotLoaded as e:
-        await ctx.send(f"OpusNotLoaded exception: \n`{e}`")
 
 @bot.command(name="demoing")
 async def demoing(ctx):
