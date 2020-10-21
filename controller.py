@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
+from discord.errors import ClientException
+from discord.errors import DiscordException
+from discord.opus import OpusNotLoaded
 
 from gtts import gTTS
 import ffmpeg
@@ -90,25 +93,25 @@ async def r(ctx, *, arg=None):
                 return
             
             success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
-
             filename = slugify(success, lowercase=True)
             path = 'audio/{}.mp3'.format(filename)
 
             try:
                 # Lets play that mp3 file in the voice channel
                 vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print(f"Finished playing: {e}"))
+                #vc.play(discord.FFmpegPCMAudio("audio/critical.mp3"), after=lambda e: print(f"Finished playing: {e}"))
 
                 # Lets set the volume to 1
                 vc.source = discord.PCMVolumeTransformer(vc.source)
                 vc.source.volume = 1
 
             # Handle the exceptions that can occur, i don't entirely understand this though, so I commented it out
-            #except ClientException as e:
-            #    await ctx.send(f"A client exception occured:\n`{e}`")
+            except ClientException as e:
+                await ctx.send(f"A client exception occured:\n`{e}`")
             except TypeError as e:
                 await ctx.send(f"TypeError exception:\n`{e}`")
-            #except OpusNotLoaded as e:
-            #    await ctx.send(f"OpusNotLoaded exception: \n`{e}`")            
+            except OpusNotLoaded as e:
+                await ctx.send(f"OpusNotLoaded exception: \n`{e}`")            
     
     # PASS: this is every other roll condition.
     else:
