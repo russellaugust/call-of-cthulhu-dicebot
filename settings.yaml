@@ -1,4 +1,8 @@
-announce: false
+announce: true
 audio_rolls_path: audio/
 card_path: images/cards/
 database_path: dicebot.db
+
+gif_critical: https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif
+gif_fumble: https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif
+gif_lucky: https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif
