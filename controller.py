@@ -19,6 +19,7 @@ import mathtools
 bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebot", help_command=None)
 settings = Settings()
 db = Database(settings.database_path)
+song_queue = []
 
 @bot.event
 async def on_ready():
@@ -36,7 +37,7 @@ async def r(ctx, *, arg=None):
     #description = "{}: ".format(ctx.author.mention)
     description = ""
 
-    # putting all results in the database.  It skips when there's nothing, including failures and syntax errors!
+    # ADD TO DB: putting all results in the database.  It skips when there's nothing, including failures and syntax errors!
     for roll in dice.getrolls():
         print("{} {} {} {} {} {} {} {} {} {}".format(ctx.guild, ctx.channel, ctx.author, ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
 
@@ -76,14 +77,14 @@ async def r(ctx, *, arg=None):
             )
         
         # if the state is a lucky success, show some fireworks!
-        if int(roll.get_sumtotal()) == int(roll.get_stat()):
+        if dice.getroll().get_success() == "lucky success":
             embed.set_image(url="https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif")
 
-        elif int(roll.get_sumtotal()) == int(1):
+        elif dice.getroll().get_success() == "critical":
             #embed.set_image(url="https://media.giphy.com/media/hSoZSJanVL4k9fVz0e/giphy.gif")
             embed.set_image(url="https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif")
         
-        elif int(roll.get_sumtotal()) == int(100):
+        elif dice.getroll().get_success() == "fumble":
             embed.set_image(url="https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif")
 
         if settings.announce:
@@ -93,17 +94,18 @@ async def r(ctx, *, arg=None):
                 return
             
             success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
-            filename = slugify(success, lowercase=True)
-            path = 'audio/{}.mp3'.format(filename)
+            success_slugify = slugify(success, lowercase=True)
+
+            path = 'audio/diceroll-vo/{}-{}.mp3'.format(success_slugify, random.randint(1,4))
+            song_queue.append(path)
 
             try:
-                # Lets play that mp3 file in the voice channel
-                vc.play(discord.FFmpegPCMAudio(path), after=lambda e: print(f"Finished playing: {e}"))
-                #vc.play(discord.FFmpegPCMAudio("audio/critical.mp3"), after=lambda e: print(f"Finished playing: {e}"))
-
-                # Lets set the volume to 1
-                vc.source = discord.PCMVolumeTransformer(vc.source)
-                vc.source.volume = 1
+                if not vc.is_playing():
+                    song_queue.insert(0, "audio/diceroll1.mp3")
+                    song_queue.insert(len(song_queue)-1, "audio/DramaticSting1.mp3") if success == "critical" or success == "fumble" else None
+                    
+                    # Play audio in channel
+                    play_next(ctx)
 
             # Handle the exceptions that can occur, i don't entirely understand this though, so I commented it out
             except ClientException as e:
@@ -113,7 +115,7 @@ async def r(ctx, *, arg=None):
             except OpusNotLoaded as e:
                 await ctx.send(f"OpusNotLoaded exception: \n`{e}`")            
     
-    # PASS: this is every other roll condition.
+    # PASS: this is every other roll condition. 
     else:
         for roll in dice.getrolls():
             description += "{} = {}\n".format(roll.get_equation(), roll.get_sumtotal())
@@ -124,8 +126,22 @@ async def r(ctx, *, arg=None):
             description=description
             )
 
+    await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None
     embed.set_author(name=ctx.author.display_name, url=db.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)
     await ctx.send(embed=embed)
+
+def play_next(ctx):
+    if len(song_queue) >= 1:
+        vc = ctx.voice_client
+
+        # play sound
+        vc.play(discord.FFmpegPCMAudio(source=song_queue[0]), after=lambda e: play_next(ctx))
+
+        # Lets set the volume to 1
+        vc.source = discord.PCMVolumeTransformer(vc.source)
+        vc.source.volume = settings.voice_volume
+
+        del song_queue[0]
 
 @bot.command(pass_context=True)
 async def lastrolls(ctx, *, arg=None):
@@ -249,6 +265,7 @@ async def connect(ctx, *, channel: discord.VoiceChannel=None):
             raise VoiceConnectionError(f'Connecting to channel: <{channel}> timed out.')
 
     await ctx.send(f'Connected to: **{channel}**', delete_after=20)
+
 
 @bot.command()
 async def disconnect(ctx):
