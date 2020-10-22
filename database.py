@@ -62,7 +62,6 @@ class Database:
             # stores roll as class RollResult
             roll = diceroller.DiceResult(argument=argument, equation=equation, sumtotal=result, stat=stat, comment=comment, timestamp=messagetime, user=user, nick=nick, channel=channel, guild=guild)
             rolls.append(roll)
-
         return rolls
 
 
@@ -70,6 +69,7 @@ class Database:
         sql = "INSERT INTO rolls (messagetime, user, nick, argument, equation, result, stat, success, comment, guild, channel) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
         values = (time.time(), user, nick, argument, equation, result_int, stat_int, success, comment, guild, channel)
         self.execute(sql,values)
+        self.commit()
 
     def get_as_rolls(self, date_in_epoch=0, date_out_epoch=None, number_of_entries=1, requested_user=None, requested_guild=None, requested_channel=None):
         select_stmt =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND user = CASE WHEN '%s' IS 'None' THEN user ELSE '%s' END AND channel = CASE WHEN '%s' IS 'None' THEN channel ELSE '%s' END AND guild = CASE WHEN '%s' IS 'None' THEN guild ELSE '%s' END ORDER BY messagetime DESC
