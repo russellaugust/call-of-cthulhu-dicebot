@@ -47,7 +47,3 @@ Examples:
 !r repeat(1d6+4 #comment, 5)
 !r repeat(45, 5)
 ```
-## Roadmap
-
-Import characters for quicker use with dicebot. 
-Show last 5 rolls.
