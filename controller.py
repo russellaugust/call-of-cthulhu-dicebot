@@ -214,7 +214,7 @@ async def on_reaction_add(reaction, user):
     if user != bot.user:
         channel = reaction.message.channel
         ctx = await bot.get_context(reaction.message)
-        await ctx.send('{} has added {} to the the message {}'.format(user.name, reaction.emoji, reaction.message.content))
+        #await ctx.send('{} has added {} to the the message {}'.format(user.name, reaction.emoji, reaction.message.content))
 
     #await bot.process_commands(reaction.message)
 

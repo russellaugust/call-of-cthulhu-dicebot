@@ -1,4 +1,4 @@
-announce: true
+announce: false
 audio_rolls_path: audio/
 card_path: images/cards/
 database_path: dicebot.db
