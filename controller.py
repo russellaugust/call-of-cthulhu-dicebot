@@ -82,7 +82,9 @@ async def r(ctx, *, arg=None):
 
         elif dice.getroll().get_success() == "critical":
             #embed.set_image(url="https://media.giphy.com/media/hSoZSJanVL4k9fVz0e/giphy.gif")
-            embed.set_image(url="https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif")
+            #embed.set_image(url="https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif")
+            embed.set_image(url="https://media.giphy.com/media/QeiMi6xK1csJiY36r4/giphy.gif")
+            
         
         elif dice.getroll().get_success() == "fumble":
             embed.set_image(url="https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif")
@@ -126,7 +128,7 @@ async def r(ctx, *, arg=None):
             description=description
             )
 
-    await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None
+    await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None # dramatic pause!
     embed.set_author(name=ctx.author.display_name, url=db.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)
     await ctx.send(embed=embed)
 
@@ -177,9 +179,26 @@ async def licorice(ctx):
     await ctx.send("Have you tasted the delicious: {} licorice?".format(random.choice(licorice_twist_ranking)))
      
 @bot.command()
-async def pocky(ctx):
-    '''Returns a thing about pocky flavors.'''
-    await ctx.send("Awaiting more data...")
+async def improve(ctx, *, arg=None):
+    '''this is for when you're improving a stat.  it rolls a 1d100 against the stat, then if its a FAIL it rolls a 1d10 and adds it to the stat.'''
+    description = ""
+    stats = arg.split(" ")
+    for stat in stats:
+        if mathtools.RepresentsInt(stat):
+            dice = diceroller.DiceRolls(stat)
+            if dice.getroll().get_sumtotal() >= int(stat):
+                stat_improve_roll = diceroller.DiceRolls("1d10")
+                stat_improvement = stat_improve_roll.getroll().get_sumtotal() + int(stat)
+                #total = stat_improve_roll.getroll().get_sumtotal()
+                #total = stat_improve_roll.getroll().get_s
+                description += "{}\n".format("Stat with {} is now {} (".format(int(stat), stat_improvement))
+
+    if description == "":
+        description = "No stats improved. Sorry!"
+
+    embed = discord.Embed(colour=discord.Colour(0x24ed60), description=description)
+    embed.set_author(name=ctx.author.display_name, url=db.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)    
+    await ctx.send(embed=embed)
 
 @bot.command()
 async def whocares(ctx):
@@ -197,6 +216,7 @@ async def testing(ctx):
     '''test a reaction tool for polling / answering requests'''
 
     embed = discord.Embed(title="testing", colour=discord.Colour(0xbf1919), description="description")
+    embed.set_image(url="https://cloud.vhs.church/s/iDqtRXRwiPGKZab/download")
 
     msg = await ctx.send(ctx.message.channel,embed=embed)
 
@@ -233,7 +253,7 @@ class InvalidVoiceChannel(VoiceConnectionError):
     pass
 
 @bot.command()
-async def connect(ctx, *, channel: discord.VoiceChannel=None):
+async def join(ctx, *, channel: discord.VoiceChannel=None):
     """
     Connect to a voice channel
     This command also handles moving the bot to different channels.
