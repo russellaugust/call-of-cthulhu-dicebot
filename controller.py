@@ -191,7 +191,9 @@ async def improve(ctx, *, arg=None):
                 stat_improvement = stat_improve_roll.getroll().get_sumtotal() + int(stat)
                 #total = stat_improve_roll.getroll().get_sumtotal()
                 #total = stat_improve_roll.getroll().get_s
-                description += "{}\n".format("Stat with {} is now {} (".format(int(stat), stat_improvement))
+                description += "{}\n".format("Stat with {} is now {}".format(int(stat), stat_improvement))
+            else:
+                description += "{}\n".format("Stat with {} is not improving".format(int(stat)))
 
     if description == "":
         description = "No stats improved. Sorry!"
