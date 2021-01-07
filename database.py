@@ -1,12 +1,21 @@
-import sqlite3, time
+import sqlite3, time, psycopg2
 from datetime import datetime
 import diceroller
+import credentials as cred
 
 class Database:
     # This will let you use the Database class either normally like db = Database('db_file.sqlite) or in a with statement:
     def __init__(self, name):
-        self._conn = sqlite3.connect(name)
-        self._cursor = self._conn.cursor()
+        if name.split('.')[-1].lower() == "db":
+            print("this will connect to a local database...")
+            self._conn = sqlite3.connect(name)
+            self._cursor = self._conn.cursor()
+        else:
+            print("this will connect to a remote database server...")
+            self.conn = psycopg2.connect(database=cred.database, user=cred.user, password=cred.password, host=cred.host, port=cred.port)
+            #self._conn = sqlite3.connect(name)
+            self._cursor = self._conn.cursor()
+
 
     def __enter__(self):
         return self
@@ -109,7 +118,7 @@ class Database:
 
 if __name__ == '__main__':
 
-    db = Database('dicebot.db')
+    db = Database('dicebot2.db')
 
     date_in = datetime(2020, 10, 6, 23, 55, 59).timestamp()
     date_out = datetime(2020, 10, 9, 23, 55, 59).timestamp()
