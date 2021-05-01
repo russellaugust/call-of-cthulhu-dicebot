@@ -12,7 +12,7 @@ class Database:
             self._cursor = self._conn.cursor()
         else:
             print("this will connect to a remote database server...")
-            self.conn = psycopg2.connect(database=cred.database, user=cred.user, password=cred.password, host=cred.host, port=cred.port)
+            self._conn = psycopg2.connect(database=cred.database, user=cred.user, password=cred.password, host=cred.host, port=cred.port)
             #self._conn = sqlite3.connect(name)
             self._cursor = self._conn.cursor()
 
@@ -73,22 +73,21 @@ class Database:
             rolls.append(roll)
         return rolls
 
-
     def add_roll(self, user=None, nick=None, argument=None, equation=None, result_int=None, stat_int=None, success=None, comment=None, guild=None, channel=None):
-        sql = "INSERT INTO rolls (messagetime, user, nick, argument, equation, result, stat, success, comment, guild, channel) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
-        values = (time.time(), user, nick, argument, equation, result_int, stat_int, success, comment, guild, channel)
+        sql = "INSERT INTO rolls (messagetime, username, nick, argument, equation, result, stat, success, comment, guild, channel) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        values = (datetime.now(), user, nick, argument, equation, result_int, stat_int, success, comment, guild, channel)
         self.execute(sql,values)
         self.commit()
 
     def get_as_rolls(self, date_in_epoch=0, date_out_epoch=None, number_of_entries=1, requested_user=None, requested_guild=None, requested_channel=None):
-        select_stmt =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND user = CASE WHEN '%s' IS 'None' THEN user ELSE '%s' END AND channel = CASE WHEN '%s' IS 'None' THEN channel ELSE '%s' END AND guild = CASE WHEN '%s' IS 'None' THEN guild ELSE '%s' END ORDER BY messagetime DESC
+        select_stmt =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND username = CASE WHEN '%s' IS 'None' THEN username ELSE '%s' END AND channel = CASE WHEN '%s' IS 'None' THEN channel ELSE '%s' END AND guild = CASE WHEN '%s' IS 'None' THEN guild ELSE '%s' END ORDER BY messagetime DESC
                             ''' % (date_in_epoch, date_out_epoch, requested_user, requested_user, requested_channel, requested_channel, requested_guild, requested_guild)
         # sets the date_out time to right now if nothing is inputted, otherwise it uses what it gets
         date_out_epoch = time.time() if date_out_epoch is None else date_out_epoch
 
         if number_of_entries >= 0:
             # this sql will fine tune the results based on the requested user, channel and guild.  if none is given, it gets all
-            select_stmt =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND user = CASE WHEN '%s' IS 'None' THEN user ELSE '%s' END AND channel = CASE WHEN '%s' IS 'None' THEN channel ELSE '%s' END AND guild = CASE WHEN '%s' IS 'None' THEN guild ELSE '%s' END ORDER BY messagetime DESC LIMIT %s
+            select_stmt =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND username = CASE WHEN '%s' IS 'None' THEN username ELSE '%s' END AND channel = CASE WHEN '%s' IS 'None' THEN channel ELSE '%s' END AND guild = CASE WHEN '%s' IS 'None' THEN guild ELSE '%s' END ORDER BY messagetime DESC LIMIT %s
                             ''' % (date_in_epoch, date_out_epoch, requested_user, requested_user, requested_channel, requested_channel, requested_guild, requested_guild, number_of_entries)
         
         records = self.query(select_stmt)
@@ -111,23 +110,24 @@ class Database:
 
         return output        
 
-    # Returns a random licorice flavor
-    def get_random_licorice(self):
-        x = self.query('''SELECT flavor, link FROM licorice ORDER BY random() LIMIT 1;''')
-        return x[0]
-
 if __name__ == '__main__':
 
-    db = Database('dicebot2.db')
+    #db = Database('dicebot.db')
+    db = Database('postgres')
 
+    result = diceroller.DiceRolls("45")
+    print(result)
+
+    '''
     date_in = datetime(2020, 10, 6, 23, 55, 59).timestamp()
     date_out = datetime(2020, 10, 9, 23, 55, 59).timestamp()
     rolls = db.get_as_rolls(date_in, date_out, 3, requested_guild="Not Art", requested_user="Beckyrocks#9891")
     strings = db.get_entries_as_string(date_in, date_out, -1, requested_guild="Not Art", requested_user="Beckyrocks#9891")
+    '''
 
+    '''
     for string in strings:
         print (string)
     # for roll in rolls:
     #     print (roll.get_timestamp_pretty() + ": " + roll.get_user() + " // " + roll.get_argument() + " // " + roll.get_guild())
-
-    print (db.get_random_licorice())
+    '''
