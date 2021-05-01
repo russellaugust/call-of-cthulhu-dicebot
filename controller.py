@@ -49,17 +49,16 @@ async def r(ctx, *, arg=None):
 
     # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
     if dice.getroll().get_sumtotal() == None:
-        licorice = db.get_random_licorice()
         embed = discord.Embed(
             colour=discord.Colour(0xbf1919), 
-            description="*SPROÜTS!*   That's some bad syntax. Have a piece of [{} Licorice]({}) while you fix that.".format(licorice[0], licorice[1]), 
+            description="*SPROÜTS!*   That's some bad syntax.", 
             )
 
     # FAIL: condition if someone accidentally writes d00, which means roll a zero-sided die
     elif "d00" in dice.getroll().get_argument():
         embed = discord.Embed(
             colour=discord.Colour(0xbf1919), 
-            description="Good lord, this is embarrassing... Check that roll and try again.", 
+            description="This is embarrassing... Check that roll and try again.", 
             )
 
     # PASS: If the success field in the first dice roll is filled in, then that means it had to be a stat roll with a 1d100 so it. 
@@ -92,7 +91,7 @@ async def r(ctx, *, arg=None):
         if settings.announce:
             vc = ctx.voice_client # We use it more then once, so make it an easy variable
             if not vc:
-                await ctx.send("I need to be in a voice channel to do this, please use the connect command.")
+                await ctx.send("I need to be in a voice channel to do this, please use the `.join` command.")
                 return
             
             success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
@@ -129,7 +128,7 @@ async def r(ctx, *, arg=None):
             )
 
     await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None # dramatic pause!
-    embed.set_author(name=ctx.author.display_name, url=db.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.default_avatar_url)
     await ctx.send(embed=embed)
 
 def play_next(ctx):
@@ -172,34 +171,28 @@ async def announce(ctx, *, arg=None):
         await ctx.send("Announce Rolls in Voice Chat is now set to {}".format(arg))
     else:
         await ctx.send("Invalid Syntax: {}".format(arg))
-
-@bot.command()
-async def licorice(ctx):
-    licorice_twist_ranking = ["Cherry", "Blue Raspberry", "Mixed Berry", "Tropical", "Blood Orange", "Raspberry", "Green Apple", "Watermelon", "Root Beer", "Peach", "Chocolate", "Red", "Black", "Pina Colada"]
-    await ctx.send("Have you tasted the delicious: {} licorice?".format(random.choice(licorice_twist_ranking)))
      
 @bot.command()
 async def improve(ctx, *, arg=None):
     '''this is for when you're improving a stat.  it rolls a 1d100 against the stat, then if its a FAIL it rolls a 1d10 and adds it to the stat.'''
     description = ""
     stats = arg.split(" ")
+    roll = "1D10"
     for stat in stats:
         if mathtools.RepresentsInt(stat):
-            dice = diceroller.DiceRolls(stat)
-            if dice.getroll().get_sumtotal() >= int(stat):
-                stat_improve_roll = diceroller.DiceRolls("1d10")
+            dice = diceroller.DiceRolls(stat) # roll against the stat
+            if dice.getroll().get_sumtotal() >= int(stat): # if the total roll is greater than the stat
+                stat_improve_roll = diceroller.DiceRolls(roll)
                 stat_improvement = stat_improve_roll.getroll().get_sumtotal() + int(stat)
-                #total = stat_improve_roll.getroll().get_sumtotal()
-                #total = stat_improve_roll.getroll().get_s
-                description += "{}\n".format("Stat with {} is now {}".format(int(stat), stat_improvement))
+                description += f"\nStat with {int(stat)} is now {stat_improvement} (1D100={dice.getroll().get_sumtotal()}, {roll}={stat_improve_roll.getroll().get_sumtotal()})"
             else:
-                description += "{}\n".format("Stat with {} is not improving".format(int(stat)))
+                description += f"\nStat with {int(stat)} is not improving (1D100={dice.getroll().get_sumtotal()})"
 
     if description == "":
         description = "No stats improved. Sorry!"
 
     embed = discord.Embed(colour=discord.Colour(0x24ed60), description=description)
-    embed.set_author(name=ctx.author.display_name, url=db.get_random_licorice()[1], icon_url=ctx.author.default_avatar_url)    
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.default_avatar_url)    
     await ctx.send(embed=embed)
 
 @bot.command()
