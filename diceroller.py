@@ -17,6 +17,17 @@ class DiceResult:
     self.channel = channel
     self.guild = guild
 
+  def __str__(self) -> str:
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.timestamp))
+    return f"{timestamp} {self.user}/{self.nick}@{self.channel}@{self.guild}: {self.argument} {self.equation} {self.sumtotal} {self.stat} {self.comment}"
+  
+  def get_string(self):
+    '''return an appropriate string for the content'''
+    if self.stat:
+      return f"{self.sumtotal} is a {self.get_success()}"
+    else:
+      return f"{self.equation} = {self.sumtotal}"
+  
   def get_timestamp(self):
     return self.timestamp
   
@@ -247,7 +258,8 @@ if __name__ == '__main__':
                   '50',
                   '45 # rolling for intelligence',
                   'i farted',
-                  "45 + 45 + 23 (10-1) # hello#hello #hello #herloo!"]
+                  "45 + 45 + 23 (10-1) # hello#hello #hello #herloo!",
+                  '1d6+3']
   
 
   for test_string in test_strings:
@@ -255,5 +267,4 @@ if __name__ == '__main__':
     myrolls = DiceRolls(test_string)
 
     for dice in myrolls.getrolls():
-      results = "{}: {} = {} is a {} // comment={}".format(dice.get_argument(), dice.get_equation(), dice.get_sumtotal(), dice.get_success(), dice.get_comment())
-      print (results)
+      print (dice)
