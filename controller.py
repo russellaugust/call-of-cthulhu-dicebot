@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.flags import alias_flag_value
 from discord.utils import get
 from discord.errors import ClientException
 from discord.errors import DiscordException
@@ -25,8 +26,8 @@ song_queue = []
 async def on_ready():
     print('Logged in as {0.user}... we are alive!'.format(bot))
 
-@bot.command(pass_context=True)
-async def r(ctx, *, arg=None):
+@bot.command(pass_context=True, aliases=['r'])
+async def roll(ctx, *, arg=None):
     '''main roll command. this will allow the user to roll dice assuming some basic syntax is used.'''
 
     # if the user only types the command !r, it roll a 1d100
@@ -34,7 +35,6 @@ async def r(ctx, *, arg=None):
         arg = "1D100"
     
     dice = diceroller.DiceRolls(arg)
-    #description = "{}: ".format(ctx.author.mention)
     description = ""
 
     # ADD TO DB: putting all results in the database.  It skips when there's nothing, including failures and syntax errors!
@@ -46,6 +46,7 @@ async def r(ctx, *, arg=None):
             print ("Roll NOT added to Database!")
         else:
             db.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment(), str(ctx.guild), str(ctx.channel))
+
 
     # FAIL: in this event, the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
     if dice.getroll().get_sumtotal() == None:
@@ -75,18 +76,13 @@ async def r(ctx, *, arg=None):
             description=description
             )
         
-        # if the state is a lucky success, show some fireworks!
+        # embed a GIF or image for these special situations
         if dice.getroll().get_success() == "lucky success":
-            embed.set_image(url="https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif")
-
+            embed.set_image(url=settings.gif_lucky)
         elif dice.getroll().get_success() == "critical":
-            #embed.set_image(url="https://media.giphy.com/media/hSoZSJanVL4k9fVz0e/giphy.gif")
-            #embed.set_image(url="https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif")
-            embed.set_image(url="https://media.giphy.com/media/QeiMi6xK1csJiY36r4/giphy.gif")
-            
-        
+            embed.set_image(url=settings.gif_critical)
         elif dice.getroll().get_success() == "fumble":
-            embed.set_image(url="https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif")
+            embed.set_image(url=settings.gif_fumble)
 
         if settings.announce:
             vc = ctx.voice_client # We use it more then once, so make it an easy variable
@@ -119,7 +115,7 @@ async def r(ctx, *, arg=None):
     # PASS: this is every other roll condition. 
     else:
         for roll in dice.getrolls():
-            description += "{} = {}\n".format(roll.get_equation(), roll.get_sumtotal())
+            description += f"{roll.get_string()}\n"
 
         embed = discord.Embed(
             title=roll.get_comment(),
@@ -127,9 +123,35 @@ async def r(ctx, *, arg=None):
             description=description
             )
 
-    await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None # dramatic pause!
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.default_avatar_url)
+    # dramatic pause for fumbles and criticals
+    author_avatar_url = ctx.author.avatar_url or ctx.author.default_avatar_url
+    await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None
+    embed.set_author(name=ctx.author.display_name, icon_url=author_avatar_url)
     await ctx.send(embed=embed)
+
+@bot.command(pass_context=True, aliases=['r+'])
+async def rolladvantage(ctx, *, arg=None):
+
+    # if the user only types the command !r, it roll a 1d100
+    if not arg:
+        arg = "1D100"
+    
+    dice1 = diceroller.DiceRolls(arg).getroll()
+    dice2 = diceroller.DiceRolls(arg).getroll()
+
+    description = f"{dice1.get_string()}\n~~{dice2.get_string()}~~" if dice1.get_sumtotal() <= dice2.get_sumtotal() else f"~~{dice1.get_string()}~~\n{dice2.get_string()}"
+    color = dice1.get_success_color() if dice1.get_sumtotal() <= dice2.get_sumtotal() else dice2.get_success_color()
+
+    embed = discord.Embed(title=dice1.get_comment(), colour=color, description=description)
+    author_avatar_url = ctx.author.avatar_url or ctx.author.default_avatar_url
+    embed.set_author(name=ctx.author.display_name, icon_url=author_avatar_url)
+
+    await ctx.send(embed=embed)
+
+@bot.command(pass_context=True, aliases=['r-'])
+async def rolldisadvantage(ctx, *, arg=None):
+    await ctx.send("Still testing...")
+
 
 def play_next(ctx):
     if len(song_queue) >= 1:
@@ -172,7 +194,7 @@ async def announce(ctx, *, arg=None):
     else:
         await ctx.send("Invalid Syntax: {}".format(arg))
      
-@bot.command()
+@bot.command(aliases=['i'])
 async def improve(ctx, *, arg=None):
     '''this is for when you're improving a stat.  it rolls a 1d100 against the stat, then if its a FAIL it rolls a 1d10 and adds it to the stat.'''
     description = ""
@@ -229,6 +251,7 @@ async def on_reaction_add(reaction, user):
     if user != bot.user:
         channel = reaction.message.channel
         ctx = await bot.get_context(reaction.message)
+        print('testing reaction successful.')
         #await ctx.send('{} has added {} to the the message {}'.format(user.name, reaction.emoji, reaction.message.content))
 
     #await bot.process_commands(reaction.message)
@@ -322,10 +345,10 @@ async def help(ctx):
     embed.set_thumbnail(url="https://i.pinimg.com/originals/3d/26/47/3d2647dd3f2a03d33e149c8af1c80516.jpg")
 
     embed.add_field(name="Rolling Dice", value="Below is some of the functionality of this bot.\n\n", inline=False)
-    embed.add_field(name="Rolling Against Stats", value="Example:\n\n*/r 1d100 45*\n*/r 45*\n\nReturns what you rolled and how successful the roll was. In the example, 45 is the stat you're rolling against like INT or CON.", inline=False)
-    embed.add_field(name="Standard Rolls", value="Examples:\n\n*/r 1d6*\n*/r 1d10+12*\n*2d4+1d6+5*\n\nReturns the results of your roll and completes the math.", inline=False)
-    embed.add_field(name="Comments", value="Examples:\n\n*/r 1d6 # int roll for my life*\n\nThis just adds a little context to your roll.  This also gets stored in the database!", inline=False)
-    embed.add_field(name="Repeating Rolls", value="Examples:\n\n*/r repeat(1d6+4 #comment, 5)*\n*/r repeat(45, 5)*\n\nThis will execute the roll as many times as in the second field. So 5 times in the above examples.  Unfortunately comments need to be inside the repeat command for now.", inline=False)
+    embed.add_field(name="Rolling Against Stats", value="Example:\n\n*.r 1d100 45*\n*.r 45*\n\nReturns what you rolled and how successful the roll was. In the example, 45 is the stat you're rolling against like INT or CON.", inline=False)
+    embed.add_field(name="Standard Rolls", value="Examples:\n\n*.r 1d6*\n*.r 1d10+12*\n*2d4+1d6+5*\n\nReturns the results of your roll and completes the math.", inline=False)
+    embed.add_field(name="Comments", value="Examples:\n\n*.r 1d6 # int roll for my life*\n\nThis just adds a little context to your roll.  This also gets stored in the database!", inline=False)
+    embed.add_field(name="Repeating Rolls", value="Examples:\n\n*.r repeat(1d6+4 #comment, 5)*\n*.r repeat(45, 5)*\n\nThis will execute the roll as many times as in the second field. So 5 times in the above examples.  Unfortunately comments need to be inside the repeat command for now.", inline=False)
 
     await ctx.author.send(embed=embed)
 
