@@ -13,7 +13,6 @@ class Database:
         else:
             print("this will connect to a remote database server...")
             self._conn = psycopg2.connect(database=cred.database, user=cred.user, password=cred.password, host=cred.host, port=cred.port)
-            #self._conn = sqlite3.connect(name)
             self._cursor = self._conn.cursor()
 
 
@@ -69,7 +68,7 @@ class Database:
             guild = record[11]
 
             # stores roll as class RollResult
-            roll = diceroller.DiceResult(argument=argument, equation=equation, sumtotal=result, stat=stat, comment=comment, timestamp=messagetime, user=user, nick=nick, channel=channel, guild=guild)
+            roll = diceroller.RollResult(argument=argument, equation=equation, sumtotal=result, stat=stat, comment=comment, timestamp=messagetime, user=user, nick=nick, channel=channel, guild=guild)
             rolls.append(roll)
         return rolls
 
@@ -79,25 +78,28 @@ class Database:
         self.execute(sql,values)
         self.commit()
 
-    def get_as_rolls(self, date_in_epoch=0, date_out_epoch=None, number_of_entries=1, requested_user=None, requested_guild=None, requested_channel=None):
-        select_stmt =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND username = CASE WHEN '%s' IS 'None' THEN username ELSE '%s' END AND channel = CASE WHEN '%s' IS 'None' THEN channel ELSE '%s' END AND guild = CASE WHEN '%s' IS 'None' THEN guild ELSE '%s' END ORDER BY messagetime DESC
-                            ''' % (date_in_epoch, date_out_epoch, requested_user, requested_user, requested_channel, requested_channel, requested_guild, requested_guild)
+    def get_as_rolls(self, date_in_epoch=None, date_out_epoch=None, number_of_entries=1, requested_user=None, requested_guild=None, requested_channel=None):
+        sql =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND username = CASE WHEN %s IS NULL THEN username ELSE %s END AND channel = CASE WHEN %s IS NULL THEN channel ELSE %s END AND guild = CASE WHEN %s IS NULL THEN guild ELSE %s END ORDER BY messagetime DESC'''
+        data = (date_in_epoch, date_out_epoch, requested_user, requested_user, requested_channel, requested_channel, requested_guild, requested_guild)
+        
         # sets the date_out time to right now if nothing is inputted, otherwise it uses what it gets
-        date_out_epoch = time.time() if date_out_epoch is None else date_out_epoch
+        date_in_epoch = datetime.min if date_in_epoch is None else date_in_epoch
+        date_out_epoch = datetime.now() if date_out_epoch is None else date_out_epoch
 
         if number_of_entries >= 0:
             # this sql will fine tune the results based on the requested user, channel and guild.  if none is given, it gets all
-            select_stmt =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND username = CASE WHEN '%s' IS 'None' THEN username ELSE '%s' END AND channel = CASE WHEN '%s' IS 'None' THEN channel ELSE '%s' END AND guild = CASE WHEN '%s' IS 'None' THEN guild ELSE '%s' END ORDER BY messagetime DESC LIMIT %s
-                            ''' % (date_in_epoch, date_out_epoch, requested_user, requested_user, requested_channel, requested_channel, requested_guild, requested_guild, number_of_entries)
+            sql =   '''SELECT * from rolls WHERE messagetime BETWEEN %s and %s AND username = CASE WHEN %s IS NULL THEN username ELSE %s END AND channel = CASE WHEN %s IS NULL THEN channel ELSE %s END AND guild = CASE WHEN %s IS NULL THEN guild ELSE %s END ORDER BY messagetime DESC LIMIT %s'''
+            data = (date_in_epoch, date_out_epoch, requested_user, requested_user, requested_channel, requested_channel, requested_guild, requested_guild, number_of_entries)
         
-        records = self.query(select_stmt)
+        print (sql)
+        records = self.query(sql, data)
         rolls = self.convert_to_roll(records)
         return rolls
 
     # Returns a list of entries base on date. Defaults to last entry. -1 is all entries.
-    def get_entries_as_string(self, date_in_epoch=0, date_out_epoch=None, number_of_entries=1, requested_user=None, requested_guild=None, requested_channel=None):
-        
-        rolls = self.get_as_rolls(date_in_epoch=date_in_epoch, date_out_epoch=date_out_epoch, number_of_entries=number_of_entries, requested_user=requested_user, requested_guild=requested_guild, requested_channel=requested_channel)
+    def get_entries_as_string(self, date_in_epoch=datetime.min, date_out_epoch=None, number_of_entries=1, requested_user=None, requested_guild=None, requested_channel=None):
+
+        rolls = self.get_as_rolls(date_in_epoch=None, date_out_epoch=date_out_epoch, number_of_entries=number_of_entries, requested_user=requested_user, requested_guild=requested_guild, requested_channel=requested_channel)
 
         output = []
         for roll in rolls:
@@ -118,16 +120,12 @@ if __name__ == '__main__':
     result = diceroller.DiceRolls("45")
     print(result)
 
-    '''
-    date_in = datetime(2020, 10, 6, 23, 55, 59).timestamp()
-    date_out = datetime(2020, 10, 9, 23, 55, 59).timestamp()
+    date_in = datetime(2020, 10, 6, 23, 55, 59)
+    date_out = datetime(2021, 10, 9, 23, 55, 59)
     rolls = db.get_as_rolls(date_in, date_out, 3, requested_guild="Not Art", requested_user="Beckyrocks#9891")
-    strings = db.get_entries_as_string(date_in, date_out, -1, requested_guild="Not Art", requested_user="Beckyrocks#9891")
-    '''
+    strings = db.get_entries_as_string(date_in, date_out, 3, requested_guild="Not Art", requested_user="Beckyrocks#9891")
 
-    '''
     for string in strings:
         print (string)
     # for roll in rolls:
     #     print (roll.get_timestamp_pretty() + ": " + roll.get_user() + " // " + roll.get_argument() + " // " + roll.get_guild())
-    '''
