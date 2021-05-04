@@ -3,7 +3,7 @@ import re, random, ast, time, datetime
 UNARY_OPS = (ast.UAdd, ast.USub)
 BINARY_OPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod)
 
-class DiceResult:
+class RollResult:
   def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None):
     '''this will eventually be an additional class that holds the results of rolls since there's a possible scenario for multi-rolling'''
     self.argument = argument
@@ -49,6 +49,12 @@ class DiceResult:
 
   def get_stat(self):
     return self.stat
+
+  def is_stat_check(self):
+    if self.get_success() is not None:
+      return True
+    else:
+      return False
 
   def get_user(self):
     return self.user
@@ -134,6 +140,9 @@ class DiceRolls:
     
     self.process_roll_command(rolls_arg) # begin parsing user input
 
+  def __str__(self) -> str:
+      return("placeholder for DiceRoll data")
+
   def getroll(self, rollnumber=0):
     if len(self.rolls)>rollnumber:
       return self.rolls[rollnumber]
@@ -176,7 +185,7 @@ class DiceRolls:
       equation = self.generate_equation(argument)
       total = self.calculate_total(equation)
 
-    dr = DiceResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment)
+    dr = RollResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment)
     return dr
 
   def process_roll_command(self, rolls_arg):
@@ -216,7 +225,7 @@ class DiceRolls:
     return results_string
 
   def perform_rolls(self, amount, sides):
-
+    
     if sides == 0 or amount == 0:
       return [0]
     else:
@@ -268,3 +277,4 @@ if __name__ == '__main__':
 
     for dice in myrolls.getrolls():
       print (dice)
+      print (dice.is_stat_check())
