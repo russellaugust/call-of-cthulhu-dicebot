@@ -16,11 +16,19 @@ import diceroller
 import credentials as cred
 from settings import Settings
 import mathtools
+import os
 
 bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebot")
 settings = Settings()
 db = Database(settings.database_path)
 song_queue = []
+
+
+def count_files_starting_with(folder, starting):
+    counter = 0
+    for file in os.listdir(folder):
+        counter += 1 if file.startswith(starting) else 0
+    return counter
 
 @bot.event
 async def on_ready():
@@ -93,7 +101,10 @@ async def rollnormal(ctx, *, arg=None):
             success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
             success_slugify = slugify(success, lowercase=True)
 
-            path = 'audio/diceroll-vo/{}-{}.mp3'.format(success_slugify, random.randint(1,4))
+            voicefolder = "audio/diceroll-vo-demon1"
+            max_vo_variations = count_files_starting_with(voicefolder, success_slugify)
+
+            path = f'{voicefolder}/{success_slugify}-{random.randint(1,max_vo_variations)}.mp3'
             song_queue.append(path)
 
             try:
@@ -253,6 +264,17 @@ async def improve(ctx, *, arg=None):
     embed = discord.Embed(colour=discord.Colour(0x24ed60), description=description)
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.default_avatar_url)    
     await ctx.send(embed=embed)
+
+@bot.command(pass_context=True, aliases=['s'])
+async def set(ctx, *, arg=None):
+    '''
+    Set improve dice roll
+    set voices for dice
+    '''
+
+    
+
+    await ctx.send("Future home of settings changes")
 
 @bot.command()
 async def whocares(ctx):
