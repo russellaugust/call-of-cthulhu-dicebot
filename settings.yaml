@@ -1,7 +1,11 @@
-announce: false
+announce: true
 audio_rolls_path: audio/
+audio_rolls_russell: audio/
+audio_rolls_sasha: audio/
+audio_rolls_evil: audio/
 card_path: images/cards/
 database_path: dicebot
+dice_improve: 1D10
 gif_critical: https://media.giphy.com/media/QeiMi6xK1csJiY36r4/giphy.gif
 gif_fumble: https://media.giphy.com/media/xT9Igoo05UKCnnXGtq/giphy.gif
 gif_lucky: https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif
