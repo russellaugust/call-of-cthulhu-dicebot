@@ -95,7 +95,6 @@ class Settings:
     def gif_lucky(self, input):
         self.__update__("gif_lucky", input)
 
-
     def link_exists(self, link):
         if validators.url(link):
             request = requests.get(link)
