@@ -68,6 +68,8 @@ class Settings:
         self.__update__("voice_volume", input)
 
 
+    # GIFS
+
     @property
     def gif_critical(self):
         self.__refresh__()
@@ -102,6 +104,15 @@ class Settings:
                 print('Web site exists')
             else:
                 print('Web site does not exist') 
+
+    @property
+    def dice_improve(self):
+        self.__refresh__()
+        return self.__settings__['dice_improve']
+
+    @dice_improve.setter
+    def gif_lucky(self, input):
+        self.__update__("dice_improve", input)
 
 if __name__ == '__main__':
     x = Settings()

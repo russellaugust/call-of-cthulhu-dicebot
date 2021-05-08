@@ -101,7 +101,7 @@ async def rollnormal(ctx, *, arg=None):
             success = dice.getroll().get_success() if dice.getroll().get_success() is not None else ""
             success_slugify = slugify(success, lowercase=True)
 
-            voicefolder = "audio/diceroll-vo-demon1"
+            voicefolder = "audio/diceroll-voice/demon1"
             max_vo_variations = count_files_starting_with(voicefolder, success_slugify)
 
             path = f'{voicefolder}/{success_slugify}-{random.randint(1,max_vo_variations)}.mp3'
@@ -244,10 +244,9 @@ async def announce(ctx, *, arg=None):
              brief='-i [STATS TO IMPROVE] e.g. -i 50, or -i 30 50 40 30 for multiple stats.',  
              description="This is for when you're improving a stat.  it rolls a 1d100 against the stat. If the roll is above the stat, it will roll a 1Dx (from settings) and adds it to the stat. .i or .improve will work.\n\n-i [STATS TO IMPROVE] e.g. -i 50, or -i 30 50 40 30 for multiple stats.")
 async def improve(ctx, *, arg=None):
-    
     description = ""
     stats = arg.split(" ")
-    roll = "1D10"
+    roll = settings.dice_improve
     for stat in stats:
         if mathtools.RepresentsInt(stat):
             dice = diceroller.DiceRolls(stat) # roll against the stat
