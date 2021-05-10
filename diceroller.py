@@ -50,7 +50,7 @@ class RollResult:
   def get_stat(self):
     return self.stat
 
-  def is_stat_check(self):
+  def stat_exists(self):
     if self.get_success() is not None:
       return True
     else:
@@ -141,7 +141,10 @@ class DiceRolls:
     self.process_roll_command(rolls_arg) # begin parsing user input
 
   def __str__(self) -> str:
-      return("placeholder for DiceRoll data")
+    outputstr = ""
+    for roll in self.rolls:
+      outputstr += roll.get_string()
+    return(outputstr)
 
   def getroll(self, rollnumber=0):
     if len(self.rolls)>rollnumber:
@@ -277,4 +280,4 @@ if __name__ == '__main__':
 
     for dice in myrolls.getrolls():
       print (dice)
-      print (dice.is_stat_check())
+      print (dice.stat_exists())
