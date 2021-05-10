@@ -3,11 +3,6 @@ database_path: dicebot
 audio_path: audio
 voice_subpath: audio
 audio_current_voice: sasha
-audio_rolls_russell: russell
-audio_rolls_sasha: sasha
-audio_rolls_demon1: demon1
-audio_rolls_demon2: demon2
-audio_rolls_demon2: eldritch
 card_path: images/cards/
 dice_improve: 1D10
 gif_critical: https://media.giphy.com/media/QeiMi6xK1csJiY36r4/giphy.gif
