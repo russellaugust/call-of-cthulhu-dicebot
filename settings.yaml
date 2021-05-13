@@ -1,7 +1,7 @@
 announce: true
 database_path: dicebot
 audio_path: audio
-voice_subpath: audio
+voice_subpath: diceroll-voice
 audio_current_voice: sasha
 card_path: images/cards/
 dice_improve: 1D10
