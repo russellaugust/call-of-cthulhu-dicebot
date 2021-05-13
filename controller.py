@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
-import time, asyncio, os
-from database import Database
+import time, asyncio
 import credentials as cred
 from settings import Settings
 import mathtools
@@ -51,8 +50,29 @@ async def set(ctx, *, arg=None):
     '''
     Set improve dice roll
     set voices for dice
+    set 
     '''
-    await ctx.send("Future home of settings.")
+
+    if arg is None or arg == "help":
+        settings_dict = settings.dictionary_of_properties()
+        properties = f"Below are all settings.  Use the name of the setting to change them. e.g. `{ctx.invoked_with} property True`\n"
+        
+
+        # gets the length of the longest word so the text aligns correctly, not good for mobile though
+        longest = 0
+        for key in settings_dict:
+            longest = len(key) if len(key) > longest else longest
+
+        for key in settings_dict:
+            # beginning = f"{key}"
+            # middle = ""
+            # middle += ' '*(longest-len(key)+1)
+            # properties += f"{beginning}{middle}{settings_dict[key]}\n"
+            properties += f"{key}:  `{settings_dict[key]}`\n"
+            
+        await ctx.send(f"{properties}")
+    else:
+        await ctx.send("under construction")
 
 
 @bot.command()
