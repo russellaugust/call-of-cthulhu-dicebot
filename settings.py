@@ -21,7 +21,12 @@ class Settings:
     def __refresh__(self):
         with open(SETTINGSFILE) as f:
             self.__settings__ = yaml.load(f, Loader=yaml.FullLoader)
-            
+
+    def list_of_properties(self):
+        return list(self.__settings__.keys())
+
+    def dictionary_of_properties(self):
+        return self.__settings__
         
     @property
     def announce(self):
@@ -101,9 +106,9 @@ class Settings:
         if validators.url(link):
             request = requests.get(link)
             if request.status_code == 200:
-                print('Web site exists')
+                return True
             else:
-                print('Web site does not exist') 
+                return False
 
     @property
     def dice_improve(self):
@@ -111,14 +116,19 @@ class Settings:
         return self.__settings__['dice_improve']
 
     @dice_improve.setter
-    def gif_lucky(self, input):
+    def dice_improve(self, input):
         self.__update__("dice_improve", input)
 
 if __name__ == '__main__':
     x = Settings()
-    print (x.voice_volume)
-    print (x.gif_critical)
-    print (x.gif_fumble)
-    print (x.gif_lucky)
+    #print (x.voice_volume)
+    #print (x.gif_critical)
+    #print (x.gif_fumble)
+    #print (x.gif_lucky)
+    #x.link_exists(x.gif_lucky)
 
-    x.link_exists(x.gif_lucky)
+    properties = ""
+    print(x.dictionary_of_properties())
+    for setting in x.dictionary_of_properties():
+        #properties += f"{setting}\n"
+        print (x.dictionary_of_properties()[setting])
