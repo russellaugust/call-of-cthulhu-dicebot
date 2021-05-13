@@ -215,8 +215,3 @@ class Dice(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Dice(bot))
-
-if __name__ == "__main__":
-    bot = commands.Bot(command_prefix=['.','!'], description="Call of Cthulhu Dicebot")
-    bot.add_cog(Dice(bot))
-    bot.run('NDY0ODcxMzU4ODI4OTA0NDU4.DjelNA.wpSDTLGcY3GMBn7b0RI7LCgqXxY') #Insert your bots token here
