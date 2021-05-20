@@ -16,11 +16,12 @@ class Dice(commands.Cog):
         print ('test')
         
     @commands.command(  pass_context=True, 
+                        name='roll',
                         aliases=['r'],
                         brief="Rolls the dice.  e.g. 1D100 45 # INT",  
                         description="The ROLL command works by selecting the dice you want (1D100) and modifiers (+1) an optional stat (45) and a comment (# pump some lead into that goon!)"
                         )
-    async def roll(self, ctx, *, arg=None):
+    async def rollcommand(self, ctx, *, arg=None):
         '''main roll command. this will allow the user to roll dice assuming some basic syntax is used.'''
 
         # if the user only types the command !r, it roll a 1d100
