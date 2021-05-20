@@ -4,7 +4,7 @@ UNARY_OPS = (ast.UAdd, ast.USub)
 BINARY_OPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod)
 
 class RollResult:
-  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None):
+  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None, secret=False, valid=True):
     '''this will eventually be an additional class that holds the results of rolls since there's a possible scenario for multi-rolling'''
     self.argument = argument
     self.equation = equation
@@ -16,6 +16,8 @@ class RollResult:
     self.nick = nick
     self.channel = channel
     self.guild = guild
+    self.secret = secret
+    self.valid = valid
 
   def __str__(self) -> str:
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.timestamp))
@@ -67,6 +69,9 @@ class RollResult:
 
   def get_guild(self):
     return self.guild
+
+  def is_valid(self):
+      return self.valid
 
   def get_success(self):
     total = self.get_sumtotal()
@@ -133,17 +138,21 @@ class RollResult:
 
 
 class DiceRolls:
-  def __init__(self, rolls_arg):
-
+  def __init__(self, rolls_arg, repeat=1, allvalid=True):
     self.rolls = []
     rolls_arg = rolls_arg.lower() # normalize the argument
     
-    self.process_roll_command(rolls_arg) # begin parsing user input
+    # roll the dice [repeat] times
+    self.rolls = [self.roll_the_dice(rolls_arg) for x in range(0, repeat)]
+
+    if allvalid is False:
+        '''this will reprocess the rolls and mark the correct set as valid or invalid.'''
+        pass
 
   def __str__(self) -> str:
     outputstr = ""
     for roll in self.rolls:
-      outputstr += roll.get_string()
+        outputstr += roll.get_string()
     return(outputstr)
 
   def getroll(self, rollnumber=0):
@@ -158,7 +167,45 @@ class DiceRolls:
   def get_roll_count(self):
     return len(self.rolls)
 
-  def generate_roll(self, roll_arg):
+  def valid_rolls(self):
+    # returns a list of the valid rolls
+    rolls = []
+    for roll in self.rolls:
+        if roll.is_valid():
+            rolls.append(roll)
+    return rolls
+
+  def invalid_rolls(self):
+    # returns a list of the invalid rolls
+    rolls = []
+    for roll in self.rolls:
+        if roll.is_valid() is False:
+            rolls.append(roll)
+    return rolls
+
+  def valid_roll_string(self, showall=False):
+      return 0
+
+  def highest_roll(self):
+      return 0
+  
+  def highest_roll_string(self, showall=False):
+      return 0
+
+  def lowest_roll(self):
+      return 0
+  
+  def lowest_roll_string(self, showall=False):
+      return 0
+
+  def __check_validity__(self):
+      '''
+      this will need to check the valid state of a set of rolls, or figure out a way to check them all together?
+      this is a private def
+      '''
+      pass
+
+  def roll_the_dice(self, roll_arg):
     '''parse the roll'''
 
     argument = roll_arg
@@ -188,24 +235,9 @@ class DiceRolls:
       equation = self.generate_equation(argument)
       total = self.calculate_total(equation)
 
+    # stores results in an object
     dr = RollResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment)
     return dr
-
-  def process_roll_command(self, rolls_arg):
-    # process the user input and see if its a command
-
-    # if its a repeat command
-    if "repeat(" in rolls_arg.lower(): # checks if 'repeat('
-      pattern = r'repeat\((.+),\s*([0-9]+)\)' # pattern to check for correct formatting inside 'repeat()'
-      found = re.search(pattern, rolls_arg)
-      if found:
-        for x in range (0, int(found.group(2))):
-          self.rolls.append(self.generate_roll(found.group(1)))
-      else:
-        None
-
-    else:
-      self.rolls.append(self.generate_roll(rolls_arg))
 
   def generate_equation(self, rolls_arg):
     # this will take the roll string and replace the dice roll with a result
