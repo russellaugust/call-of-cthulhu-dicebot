@@ -191,7 +191,7 @@ async def demoing(ctx):
     # Delete command after the audio is done playing.
     await ctx.message.delete()
 
-# Help Only
+# Custom Help
 '''
 @bot.command()
 async def help(ctx):
