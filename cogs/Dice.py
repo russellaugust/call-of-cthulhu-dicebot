@@ -119,8 +119,7 @@ class Dice(commands.Cog):
     async def bonus(self, ctx, *, arg=None):
 
         # if the user only types the command !r, it roll a 1d100
-        if not arg:
-            arg = "1D100"
+        arg = arg if arg else "1D100"
         
         dice1 = diceroller.DiceRolls(arg).getroll()
         dice2 = diceroller.DiceRolls(arg).getroll()
@@ -145,8 +144,7 @@ class Dice(commands.Cog):
     async def penalty(self, ctx, *, arg=None):
 
         # if the user only types the command !r, it roll a 1d100
-        if not arg:
-            arg = "1D100"
+        arg = arg if arg else "1D100"
         
         dice1 = diceroller.DiceRolls(arg).getroll()
         dice2 = diceroller.DiceRolls(arg).getroll()
