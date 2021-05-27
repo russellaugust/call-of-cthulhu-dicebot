@@ -4,7 +4,7 @@ UNARY_OPS = (ast.UAdd, ast.USub)
 BINARY_OPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod)
 
 class RollResult:
-  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None, secret=False, valid=True):
+  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None, secret=False, omit=False):
     '''this will eventually be an additional class that holds the results of rolls since there's a possible scenario for multi-rolling'''
     self.argument = argument
     self.equation = equation
@@ -17,11 +17,11 @@ class RollResult:
     self.channel = channel
     self.guild = guild
     self.secret = secret
-    self.valid = valid
+    self.omit = omit
 
   def __str__(self) -> str:
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.timestamp))
-    return f"{timestamp} {self.user}/{self.nick}@{self.channel}@{self.guild}: {self.argument} {self.equation} {self.sumtotal} {self.stat} {self.comment}"
+    return f"{timestamp} {self.user}/{self.nick}@{self.channel}@{self.guild}: {self.argument} {self.equation} {self.sumtotal} {self.stat} {self.comment} Omit: {self.omit}"
   
   def get_string(self):
     '''return an appropriate string for the content'''
@@ -58,6 +58,12 @@ class RollResult:
     else:
       return False
 
+  def is_real(self):
+    if self.get_sumtotal() is not None:
+      return True
+    else:
+      return False
+
   def get_user(self):
     return self.user
 
@@ -70,8 +76,8 @@ class RollResult:
   def get_guild(self):
     return self.guild
 
-  def is_valid(self):
-      return self.valid
+  def is_omitted(self):
+      return self.omit
 
   def get_success(self):
     total = self.get_sumtotal()
@@ -138,15 +144,21 @@ class RollResult:
 
 
 class DiceRolls:
-  def __init__(self, rolls_arg, repeat=1, allvalid=True):
+  def __init__(self, rolls_arg, repeat=1, omit_state=0):
+    # omit is a + or - integer. +1 means the highest 1 roll, -1 means lowest 1 roll, 0 means keep all rolls. +2 is highest 2 rolls, etc.
     self.rolls = []
+    omit = True if omit_state > 0 or omit_state < 0 else False
     rolls_arg = rolls_arg.lower() # normalize the argument
     
     # roll the dice [repeat] times
-    self.rolls = [self.roll_the_dice(rolls_arg) for x in range(0, repeat)]
+    self.rolls = [self.roll_the_dice(rolls_arg, omit=omit) for x in range(0, repeat)]
 
-    if allvalid is False:
+    if omit is True and self.rolls[0].is_real():
         '''this will reprocess the rolls and mark the correct set as valid or invalid.'''
+        # sort the results and pick the top or bottom n results.  Set the rolls field to omit true false
+        #most = max(roll.get_sumtotal() for roll in self.rolls)
+        #print(most)
+        #print("most")
         pass
 
   def __str__(self) -> str:
@@ -163,28 +175,29 @@ class DiceRolls:
 
   def getrolls(self):
     return self.rolls
-
+  
+  def getrealrolls(self):
+    '''returns only rolls that actually worked, where the total is not None'''
+    pass
+  
   def get_roll_count(self):
     return len(self.rolls)
 
-  def valid_rolls(self):
-    # returns a list of the valid rolls
+  def omitted_rolls(self):
+    # returns a list of the omitted rolls
     rolls = []
     for roll in self.rolls:
-        if roll.is_valid():
+        if roll.is_omitted():
             rolls.append(roll)
     return rolls
 
-  def invalid_rolls(self):
-    # returns a list of the invalid rolls
+  def not_omitted_rolls(self):
+    # returns a list of the rolls there were not omitted
     rolls = []
     for roll in self.rolls:
-        if roll.is_valid() is False:
+        if roll.is_omitted() is False:
             rolls.append(roll)
     return rolls
-
-  def valid_roll_string(self, showall=False):
-      return 0
 
   def highest_roll(self):
       return 0
@@ -198,14 +211,14 @@ class DiceRolls:
   def lowest_roll_string(self, showall=False):
       return 0
 
-  def __check_validity__(self):
+  def __check_omitted__(self):
       '''
-      this will need to check the valid state of a set of rolls, or figure out a way to check them all together?
+      this will need to check the omit state of a set of rolls, or figure out a way to check them all together?
       this is a private def
       '''
       pass
 
-  def roll_the_dice(self, roll_arg):
+  def roll_the_dice(self, roll_arg, omit=False):
     '''parse the roll'''
 
     argument = roll_arg
@@ -236,7 +249,7 @@ class DiceRolls:
       total = self.calculate_total(equation)
 
     # stores results in an object
-    dr = RollResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment)
+    dr = RollResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment, omit=omit)
     return dr
 
   def generate_equation(self, rolls_arg):
@@ -297,7 +310,6 @@ class DiceRolls:
 
 if __name__ == '__main__':
   test_strings = [ '4d100+45+(1d6-4)',
-                  'repeat(1D100 45,10)',
                   '1D100 45',
                   '50',
                   '45 # rolling for intelligence',
@@ -308,7 +320,7 @@ if __name__ == '__main__':
 
   for test_string in test_strings:
     print ("///////////////////////////////////////////////////////////////////")
-    myrolls = DiceRolls(test_string)
+    myrolls = DiceRolls(test_string, repeat=10, omit_state=1)
 
     for dice in myrolls.getrolls():
       print (dice)
