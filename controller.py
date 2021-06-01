@@ -12,27 +12,6 @@ settings = Settings()
 async def on_ready():
     print('Logged in as {0.user}... we are alive!'.format(bot))
 
-@bot.command(pass_context=True)
-async def lastrolls(ctx, *, arg=None):
-
-    if mathtools.RepresentsInt(arg): #is the argument an integer value
-        rolls = db.get_entries_as_string(number_of_entries=int(arg))
-        description = "LAST ROLLS\n"
-        for roll in rolls:
-            print (roll)
-            description += f"{roll}\n"
-
-        embed = discord.Embed(
-            colour=discord.Colour(0x24ed60), 
-            description=description
-            )
-
-        await ctx.send(embed=embed)
-    
-    else:
-        await ctx.send("bad syntax.")
-
-
 @bot.command(pass_context=True,
              brief='Does the bot speak in an audio channel? [True|False]',  
              description="Allows the bot to speak in audio channels.  This can either be True or False."
@@ -56,7 +35,6 @@ async def set(ctx, *, arg=None):
     if arg is None or arg == "help":
         settings_dict = settings.dictionary_of_properties()
         properties = f"Below are all settings.  Use the name of the setting to change them. e.g. `{ctx.invoked_with} property True`\n"
-        
 
         # gets the length of the longest word so the text aligns correctly, not good for mobile though
         longest = 0
