@@ -60,7 +60,7 @@ class Dice(commands.Cog):
             success = rolls.getroll().get_success() if rolls.getroll().get_success() is not None else ""
             success_slugify = slugify(success, lowercase=True)
 
-            voicefolder = "audio/diceroll-voice/eldritch"
+            voicefolder = self.settings.current_voice_path
             max_vo_variations = self.count_files_starting_with(voicefolder, success_slugify)
 
             path = f'{voicefolder}/{success_slugify}-{random.randint(1,max_vo_variations)}.mp3'
