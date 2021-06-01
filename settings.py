@@ -3,6 +3,7 @@
 import yaml
 import requests
 import validators
+import random
 
 SETTINGSFILE = "settings.yaml"
 
@@ -76,29 +77,44 @@ class Settings:
     # GIFS
 
     @property
-    def gif_critical(self):
+    def gifs_critical(self):
         self.__refresh__()
         return self.__settings__['gif_critical']
 
-    @gif_critical.setter
+    @property
+    def gif_random_critical(self):
+        self.__refresh__()
+        return random.choice(self.__settings__['gif_critical'])
+
+    @gifs_critical.setter
     def gif_critical(self, input):
         self.__update__("gif_critical", input)
 
     @property
-    def gif_fumble(self):
+    def gifs_fumble(self):
         self.__refresh__()
         return self.__settings__['gif_fumble']
 
-    @gif_fumble.setter
+    @property
+    def gif_random_fumble(self):
+        self.__refresh__()
+        return random.choice(self.__settings__['gif_fumble'])
+
+    @gifs_fumble.setter
     def gif_fumble(self, input):
         self.__update__("gif_fumble", input)
 
     @property
-    def gif_lucky(self):
+    def gifs_lucky(self):
         self.__refresh__()
         return self.__settings__['gif_lucky']
 
-    @gif_lucky.setter
+    @property
+    def gif_random_lucky(self):
+        self.__refresh__()
+        return random.choice(self.__settings__['gif_lucky'])
+
+    @gifs_lucky.setter
     def gif_lucky(self, input):
         self.__update__("gif_lucky", input)
 
@@ -110,6 +126,8 @@ class Settings:
             else:
                 return False
 
+    # Dice Rolls
+
     @property
     def dice_improve(self):
         self.__refresh__()
@@ -119,16 +137,19 @@ class Settings:
     def dice_improve(self, input):
         self.__update__("dice_improve", input)
 
+    @property
+    def dice_default(self):
+        self.__refresh__()
+        return self.__settings__['dice_default']
+
+    @dice_default.setter
+    def dice_default(self, input):
+        self.__update__("dice_default", input)
+
 if __name__ == '__main__':
     x = Settings()
     #print (x.voice_volume)
-    #print (x.gif_critical)
-    #print (x.gif_fumble)
-    #print (x.gif_lucky)
+    print (x.gif_random_lucky)
+    print (x.gif_random_critical)
+    print (x.gif_random_fumble)
     #x.link_exists(x.gif_lucky)
-
-    properties = ""
-    print(x.dictionary_of_properties())
-    for setting in x.dictionary_of_properties():
-        #properties += f"{setting}\n"
-        print (x.dictionary_of_properties()[setting])
