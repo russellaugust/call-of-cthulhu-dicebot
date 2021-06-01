@@ -1,4 +1,9 @@
+import enum
 import re, random, ast, time, datetime
+
+from asyncio.base_events import _run_until_complete_cb
+
+from asyncio.runners import run
 
 UNARY_OPS = (ast.UAdd, ast.USub)
 BINARY_OPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod)
@@ -25,10 +30,16 @@ class RollResult:
   
   def get_string(self):
     '''return an appropriate string for the content'''
+    pretty_string = ""
     if self.stat:
-      return f"{self.sumtotal} is a {self.get_success()}"
+      pretty_string = f"{self.sumtotal} is a **{self.get_success()}**"
     else:
-      return f"{self.equation} = {self.sumtotal}"
+      pretty_string = f"{self.equation} = {self.sumtotal}"
+
+    if self.omit:
+        pretty_string = f"~~{pretty_string}~~"
+
+    return pretty_string
   
   def get_timestamp(self):
     return self.timestamp
@@ -95,7 +106,7 @@ class RollResult:
       success_color = self.success_status_color(total, int(stat))
       return success_color
     else:
-      return None
+      return 0x0968ed
 
   def get_comment(self):
     return self.comment
@@ -122,7 +133,7 @@ class RollResult:
 
   def success_status_color(self, myroll, stat):
     '''returns a color based on success level'''
-    result = 0xed0909
+    result = 0x0968ed # blue
     if myroll == 1:
       result = 0xed0909 # critical
     elif stat <= 50 and myroll >= 96:
@@ -141,6 +152,9 @@ class RollResult:
       result = 0xed0909 # fail
     return result
   
+  def error(self):
+    return True if self.get_sumtotal is None else False
+  
 
 
 class DiceRolls:
@@ -150,22 +164,31 @@ class DiceRolls:
     omit = True if omit_state > 0 or omit_state < 0 else False
     rolls_arg = rolls_arg.lower() # normalize the argument
     
-    # roll the dice [repeat] times
+    # roll the dice [repeat] times and sets omit state for all rolls
     self.rolls = [self.roll_the_dice(rolls_arg, omit=omit) for x in range(0, repeat)]
 
     if omit is True and self.rolls[0].is_real():
         '''this will reprocess the rolls and mark the correct set as valid or invalid.'''
         # sort the results and pick the top or bottom n results.  Set the rolls field to omit true false
         #most = max(roll.get_sumtotal() for roll in self.rolls)
-        #print(most)
-        #print("most")
-        pass
+        rolls_sorted = sorted(roll.get_sumtotal() for roll in self.rolls)
+        rolls_to_omit = rolls_sorted[:omit_state] if omit_state > 0 else rolls_sorted[omit_state:]
+        print(rolls_to_omit)
+
+        for idx in range(0, len(self.rolls)):
+          if self.rolls[idx].get_sumtotal() in rolls_to_omit:
+            self.rolls[idx].omit = False
 
   def __str__(self) -> str:
     outputstr = ""
     for roll in self.rolls:
         outputstr += roll.get_string()
     return(outputstr)
+
+  def override_sumtotal(self, newtotal):
+    for idx, roll in enumerate(self.rolls):
+      self.rolls[idx].sumtotal = newtotal
+    pass
 
   def getroll(self, rollnumber=0):
     if len(self.rolls)>rollnumber:
@@ -311,17 +334,16 @@ class DiceRolls:
 if __name__ == '__main__':
   test_strings = [ '4d100+45+(1d6-4)',
                   '1D100 45',
-                  '50',
                   '45 # rolling for intelligence',
                   'i farted',
                   "45 + 45 + 23 (10-1) # hello#hello #hello #herloo!",
-                  '1d6+3']
+                  '1d6+3',
+                  '50']
   
 
   for test_string in test_strings:
     print ("///////////////////////////////////////////////////////////////////")
-    myrolls = DiceRolls(test_string, repeat=10, omit_state=1)
+    myrolls = DiceRolls(test_string, repeat=10, omit_state=-3)
 
     for dice in myrolls.getrolls():
       print (dice)
-      print (dice.stat_exists())
