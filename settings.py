@@ -4,6 +4,7 @@ import yaml
 import requests
 import validators
 import random
+import os
 
 SETTINGSFILE = "settings.yaml"
 
@@ -73,6 +74,13 @@ class Settings:
     def voice_volume(self, input):
         self.__update__("voice_volume", input)
 
+    @property
+    def current_voice_path(self):
+        audio_path = self.__settings__['audio_path']
+        voice_subpath = self.__settings__['voice_subpath']
+        audio_current_voice = self.__settings__['audio_current_voice']
+        fullpath = os.path.join(audio_path, voice_subpath, audio_current_voice)
+        return fullpath
 
     # GIFS
 
@@ -151,5 +159,5 @@ if __name__ == '__main__':
     #print (x.voice_volume)
     print (x.gif_random_lucky)
     print (x.gif_random_critical)
-    print (x.gif_random_fumble)
+    print (x.current_voice_path)
     #x.link_exists(x.gif_lucky)
