@@ -158,10 +158,10 @@ class RollResult:
 
 
 class DiceRolls:
-  def __init__(self, rolls_arg, repeat=1, omit_state=0):
+  def __init__(self, rolls_arg, repeat=1, keep=0):
     # omit is a + or - integer. +1 means the highest 1 roll, -1 means lowest 1 roll, 0 means keep all rolls. +2 is highest 2 rolls, etc.
     self.rolls = []
-    omit = True if omit_state > 0 or omit_state < 0 else False
+    omit = True if keep > 0 or keep < 0 else False
     rolls_arg = rolls_arg.lower() # normalize the argument
     
     # roll the dice [repeat] times and sets omit state for all rolls
@@ -172,7 +172,7 @@ class DiceRolls:
         # sort the results and pick the top or bottom n results.  Set the rolls field to omit true false
         #most = max(roll.get_sumtotal() for roll in self.rolls)
         rolls_sorted = sorted(roll.get_sumtotal() for roll in self.rolls)
-        rolls_to_omit = rolls_sorted[:omit_state] if omit_state > 0 else rolls_sorted[omit_state:]
+        rolls_to_omit = rolls_sorted[keep:] if keep < 0 else rolls_sorted[:keep]
         print(rolls_to_omit)
 
         for idx in range(0, len(self.rolls)):
@@ -343,7 +343,7 @@ if __name__ == '__main__':
 
   for test_string in test_strings:
     print ("///////////////////////////////////////////////////////////////////")
-    myrolls = DiceRolls(test_string, repeat=10, omit_state=-3)
+    myrolls = DiceRolls(test_string, repeat=10, keep=3)
 
     for dice in myrolls.getrolls():
       print (dice)
