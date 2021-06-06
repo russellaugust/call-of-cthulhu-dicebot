@@ -109,8 +109,8 @@ class Dice(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)
-    async def testroll(self, ctx, *, arg=None):
-        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=1, omit_state=0)
+    async def test(self, ctx, *, arg=None):
+        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=1, keep=0)
         dice.override_sumtotal(int(arg))
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - testing only.")
         embed = self.__successlevel_image__(embed, dice.getroll())
@@ -118,19 +118,19 @@ class Dice(commands.Cog):
 
     @commands.command(pass_context=True, aliases=['r+', 'b'])
     async def bonus(self, ctx, *, arg=None):
-        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=2, omit_state=1)
+        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=2, keep=-1)
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - with bonus.")
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True, aliases=['r-', 'p'])
     async def penalty(self, ctx, *, arg=None):
-        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=2, omit_state=-1)
+        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=2, keep=1)
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - with penalty.")
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True, aliases=['rp', 'rpt'])
     async def repeat(self, ctx, *, arg=None):
-        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=10, omit_state=0)
+        dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=10, keep=0)
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - repeat.")
         await ctx.send(embed=embed)
 
@@ -158,23 +158,20 @@ class Dice(commands.Cog):
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.default_avatar_url)    
         await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True)
-    async def lastrolls(self, ctx, *, arg=None):
+    @commands.group(aliases=['h'])
+    async def history(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Need more...')
 
+    @history.command(aliases=['xx'])
+    async def success(self, ctx, *, arg=None):
         if mathtools.RepresentsInt(arg): #is the argument an integer value
             rolls = self.db.get_entries_as_string(number_of_entries=int(arg))
             description = "LAST ROLLS\n"
             for roll in rolls:
-                print (roll)
                 description += f"{roll}\n"
-
-            embed = discord.Embed(
-                colour=discord.Colour(0x24ed60), 
-                description=description
-                )
-
+            embed = discord.Embed(colour=discord.Colour(0x24ed60), description=description)
             await ctx.send(embed=embed)
-        
         else:
             await ctx.send("bad syntax.")
 
