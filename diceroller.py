@@ -171,8 +171,8 @@ class DiceRolls:
         '''this will reprocess the rolls and mark the correct set as valid or invalid.'''
         # sort the results and pick the top or bottom n results.  Set the rolls field to omit true false
         #most = max(roll.get_sumtotal() for roll in self.rolls)
-        rolls_sorted = sorted(roll.get_sumtotal() for roll in self.rolls)
-        rolls_to_omit = rolls_sorted[keep:] if keep < 0 else rolls_sorted[:keep]
+        rolls_sorted = sorted((roll.get_sumtotal() for roll in self.rolls), reverse=True)
+        rolls_to_omit = rolls_sorted[:keep] if keep > 0 else rolls_sorted[keep:]
         print(rolls_to_omit)
 
         for idx in range(0, len(self.rolls)):
@@ -343,7 +343,14 @@ if __name__ == '__main__':
 
   for test_string in test_strings:
     print ("///////////////////////////////////////////////////////////////////")
-    myrolls = DiceRolls(test_string, repeat=10, keep=3)
+    myrolls = DiceRolls(test_string, repeat=10, keep=-3)
 
     for dice in myrolls.getrolls():
+      print (dice)
+
+  myrolls = DiceRolls("50", repeat=5, keep=2)
+  for dice in myrolls.getrolls():
+      print (dice)
+  myrolls = DiceRolls("50", repeat=5, keep=-2)
+  for dice in myrolls.getrolls():
       print (dice)
