@@ -1,5 +1,5 @@
 import enum
-import re, random, ast, time, datetime
+import re, random, ast, time, datetime, secrets
 
 from asyncio.base_events import _run_until_complete_cb
 
@@ -300,7 +300,9 @@ class DiceRolls:
     if sides == 0 or amount == 0:
       return [0]
     else:
-      return [random.randint(1, sides) for roll in range(0, amount)]
+      secretsGenerator = secrets.SystemRandom()
+      return [secretsGenerator.randint(1, sides) for roll in range(0, amount)]
+      #return [random.randint(1, sides) for roll in range(0, amount)] #less secure
 
   def calculate_total(self, math_string):
     # this will take a string of numbers and math characters and produce a result. 
