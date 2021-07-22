@@ -43,6 +43,16 @@ class Settings:
             raise ValueError('This needs to be True or False')
 
     @property
+    def database_enabled(self):
+        self.__refresh__()
+        return self.__settings__['database_enabled']
+
+    @database_enabled.setter
+    def database_enabled(self, input):
+        self.__update__("database_enabled", input)
+
+
+    @property
     def card_path(self):
         return self.__settings__['card_path']
 
@@ -62,6 +72,7 @@ class Settings:
 
     @property
     def audio_rolls_path(self):
+        self.__refresh__()
         return self.__settings__['audio_rolls_path']
 
 
@@ -161,3 +172,4 @@ if __name__ == '__main__':
     print (x.gif_random_critical)
     print (x.current_voice_path)
     #x.link_exists(x.gif_lucky)
+    print (x.database_enabled)
