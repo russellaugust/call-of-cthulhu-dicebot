@@ -186,6 +186,6 @@ async def help(ctx):
     await ctx.author.send(embed=embed)
 '''
 
-bot.load_extension('cogs.dice')
+bot.load_extension('cogs.Dice')
 
 bot.run(cred.discord_key) #Insert your bots token here
