@@ -91,7 +91,7 @@ class Dice(commands.Cog):
             # if ^test is present in the comment, the roll will not be store in the db (for testing purposes)
             if dice.getroll().get_comment() is not None and "^test" in dice.getroll().get_comment():
                 print ("Roll NOT added to Database!")
-            else:
+            elif self.settings.database_enabled:
                 self.db.add_roll(str(ctx.author), ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment(), str(ctx.guild), str(ctx.channel))
                 print("{} {} {} {} {} {} {} {} {} {}".format(ctx.guild, ctx.channel, ctx.author, ctx.author.display_name, arg, roll.get_equation(), roll.get_sumtotal(), roll.get_stat(), roll.get_success(), roll.get_comment()))
 

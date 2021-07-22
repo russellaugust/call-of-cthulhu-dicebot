@@ -1,5 +1,6 @@
 announce: true
-database_path: dicebot
+database_enabled: false
+database_path: dicebot.db
 audio_path: audio
 voice_subpath: diceroll-voice
 audio_current_voice: sasha
