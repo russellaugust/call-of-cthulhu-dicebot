@@ -51,6 +51,22 @@ class Database:
         self.cursor.execute(sql, params or ())
         return self.fetchall()
 
+    def initialize_db(self):
+        # Creates table if the tables don't exist.
+        self.execute('''CREATE TABLE IF NOT EXISTS rolls
+            (   _id INTEGER PRIMARY KEY,
+                messagetime timestamp, 
+                user text, 
+                nick text, 
+                argument text, 
+                equation text, 
+                result int,
+                stat int,
+                success text,
+                comment text,
+                guild text,
+                channel text)''')
+
     def convert_to_roll(self, roll_records):
         # this converts the contents of the db into a roll for reuse
         rolls = []
@@ -114,8 +130,10 @@ class Database:
 
 if __name__ == '__main__':
 
-    #db = Database('dicebot.db')
-    db = Database('postgres')
+    db = Database('dicebot.db')
+    db.initialize_db()
+
+    #db = Database('postgres')
 
     result = diceroller.DiceRolls("45")
     print(result)
@@ -123,9 +141,9 @@ if __name__ == '__main__':
     date_in = datetime(2020, 10, 6, 23, 55, 59)
     date_out = datetime(2021, 10, 9, 23, 55, 59)
     rolls = db.get_as_rolls(date_in, date_out, 3, requested_guild="Not Art", requested_user="Beckyrocks#9891")
-    strings = db.get_entries_as_string(date_in, date_out, 3, requested_guild="Not Art", requested_user="Beckyrocks#9891")
+    # strings = db.get_entries_as_string(date_in, date_out, 3, requested_guild="Not Art", requested_user="Beckyrocks#9891")
 
-    for string in strings:
-        print (string)
+    # for string in strings:
+    #     print (string)
     # for roll in rolls:
     #     print (roll.get_timestamp_pretty() + ": " + roll.get_user() + " // " + roll.get_argument() + " // " + roll.get_guild())
