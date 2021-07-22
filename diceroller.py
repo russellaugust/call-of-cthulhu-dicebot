@@ -1,10 +1,15 @@
-import re, random, ast, time, datetime
+import enum
+import re, random, ast, time, datetime, secrets
+
+from asyncio.base_events import _run_until_complete_cb
+
+from asyncio.runners import run
 
 UNARY_OPS = (ast.UAdd, ast.USub)
 BINARY_OPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod)
 
 class RollResult:
-  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None):
+  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None, secret=False, omit=False):
     '''this will eventually be an additional class that holds the results of rolls since there's a possible scenario for multi-rolling'''
     self.argument = argument
     self.equation = equation
@@ -16,17 +21,25 @@ class RollResult:
     self.nick = nick
     self.channel = channel
     self.guild = guild
+    self.secret = secret
+    self.omit = omit
 
   def __str__(self) -> str:
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.timestamp))
-    return f"{timestamp} {self.user}/{self.nick}@{self.channel}@{self.guild}: {self.argument} {self.equation} {self.sumtotal} {self.stat} {self.comment}"
+    return f"{timestamp} {self.user}/{self.nick}@{self.channel}@{self.guild}: {self.argument} {self.equation} {self.sumtotal} {self.stat} {self.comment} Omit: {self.omit}"
   
   def get_string(self):
     '''return an appropriate string for the content'''
+    pretty_string = ""
     if self.stat:
-      return f"{self.sumtotal} is a {self.get_success()}"
+      pretty_string = f"{self.sumtotal} is a **{self.get_success()}**"
     else:
-      return f"{self.equation} = {self.sumtotal}"
+      pretty_string = f"{self.equation} = {self.sumtotal}"
+
+    if self.omit:
+        pretty_string = f"~~{pretty_string}~~"
+
+    return pretty_string
   
   def get_timestamp(self):
     return self.timestamp
@@ -50,8 +63,14 @@ class RollResult:
   def get_stat(self):
     return self.stat
 
-  def is_stat_check(self):
+  def stat_exists(self):
     if self.get_success() is not None:
+      return True
+    else:
+      return False
+
+  def is_real(self):
+    if self.get_sumtotal() is not None:
       return True
     else:
       return False
@@ -67,6 +86,9 @@ class RollResult:
 
   def get_guild(self):
     return self.guild
+
+  def is_omitted(self):
+      return self.omit
 
   def get_success(self):
     total = self.get_sumtotal()
@@ -84,7 +106,7 @@ class RollResult:
       success_color = self.success_status_color(total, int(stat))
       return success_color
     else:
-      return None
+      return 0x0968ed
 
   def get_comment(self):
     return self.comment
@@ -111,7 +133,7 @@ class RollResult:
 
   def success_status_color(self, myroll, stat):
     '''returns a color based on success level'''
-    result = 0xed0909
+    result = 0x0968ed # blue
     if myroll == 1:
       result = 0xed0909 # critical
     elif stat <= 50 and myroll >= 96:
@@ -130,18 +152,43 @@ class RollResult:
       result = 0xed0909 # fail
     return result
   
+  def error(self):
+    return True if self.get_sumtotal is None else False
+  
 
 
 class DiceRolls:
-  def __init__(self, rolls_arg):
-
+  def __init__(self, rolls_arg, repeat=1, keep=0):
+    # omit is a + or - integer. +1 means the highest 1 roll, -1 means lowest 1 roll, 0 means keep all rolls. +2 is highest 2 rolls, etc.
     self.rolls = []
+    omit = True if keep > 0 or keep < 0 else False
     rolls_arg = rolls_arg.lower() # normalize the argument
     
-    self.process_roll_command(rolls_arg) # begin parsing user input
+    # roll the dice [repeat] times and sets omit state for all rolls
+    self.rolls = [self.roll_the_dice(rolls_arg, omit=omit) for x in range(0, repeat)]
+
+    if omit is True and self.rolls[0].is_real():
+        '''this will reprocess the rolls and mark the correct set as valid or invalid.'''
+        # sort the results and pick the top or bottom n results.  Set the rolls field to omit true false
+        #most = max(roll.get_sumtotal() for roll in self.rolls)
+        rolls_sorted = sorted((roll.get_sumtotal() for roll in self.rolls), reverse=True)
+        rolls_to_omit = rolls_sorted[:keep] if keep > 0 else rolls_sorted[keep:]
+        print(rolls_to_omit)
+
+        for idx in range(0, len(self.rolls)):
+          if self.rolls[idx].get_sumtotal() in rolls_to_omit:
+            self.rolls[idx].omit = False
 
   def __str__(self) -> str:
-      return("placeholder for DiceRoll data")
+    outputstr = ""
+    for roll in self.rolls:
+        outputstr += roll.get_string()
+    return(outputstr)
+
+  def override_sumtotal(self, newtotal):
+    for idx, roll in enumerate(self.rolls):
+      self.rolls[idx].sumtotal = newtotal
+    pass
 
   def getroll(self, rollnumber=0):
     if len(self.rolls)>rollnumber:
@@ -151,11 +198,50 @@ class DiceRolls:
 
   def getrolls(self):
     return self.rolls
-
+  
+  def getrealrolls(self):
+    '''returns only rolls that actually worked, where the total is not None'''
+    pass
+  
   def get_roll_count(self):
     return len(self.rolls)
 
-  def generate_roll(self, roll_arg):
+  def omitted_rolls(self):
+    # returns a list of the omitted rolls
+    rolls = []
+    for roll in self.rolls:
+        if roll.is_omitted():
+            rolls.append(roll)
+    return rolls
+
+  def not_omitted_rolls(self):
+    # returns a list of the rolls there were not omitted
+    rolls = []
+    for roll in self.rolls:
+        if roll.is_omitted() is False:
+            rolls.append(roll)
+    return rolls
+
+  def highest_roll(self):
+      return 0
+  
+  def highest_roll_string(self, showall=False):
+      return 0
+
+  def lowest_roll(self):
+      return 0
+  
+  def lowest_roll_string(self, showall=False):
+      return 0
+
+  def __check_omitted__(self):
+      '''
+      this will need to check the omit state of a set of rolls, or figure out a way to check them all together?
+      this is a private def
+      '''
+      pass
+
+  def roll_the_dice(self, roll_arg, omit=False):
     '''parse the roll'''
 
     argument = roll_arg
@@ -185,24 +271,9 @@ class DiceRolls:
       equation = self.generate_equation(argument)
       total = self.calculate_total(equation)
 
-    dr = RollResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment)
+    # stores results in an object
+    dr = RollResult(argument=roll_arg, equation=equation, sumtotal=total, stat=stat, comment=comment, omit=omit)
     return dr
-
-  def process_roll_command(self, rolls_arg):
-    # process the user input and see if its a command
-
-    # if its a repeat command
-    if "repeat(" in rolls_arg.lower(): # checks if 'repeat('
-      pattern = r'repeat\((.+),\s*([0-9]+)\)' # pattern to check for correct formatting inside 'repeat()'
-      found = re.search(pattern, rolls_arg)
-      if found:
-        for x in range (0, int(found.group(2))):
-          self.rolls.append(self.generate_roll(found.group(1)))
-      else:
-        None
-
-    else:
-      self.rolls.append(self.generate_roll(rolls_arg))
 
   def generate_equation(self, rolls_arg):
     # this will take the roll string and replace the dice roll with a result
@@ -229,7 +300,9 @@ class DiceRolls:
     if sides == 0 or amount == 0:
       return [0]
     else:
-      return [random.randint(1, sides) for roll in range(0, amount)]
+      secretsGenerator = secrets.SystemRandom()
+      return [secretsGenerator.randint(1, sides) for roll in range(0, amount)]
+      #return [random.randint(1, sides) for roll in range(0, amount)] #less secure
 
   def calculate_total(self, math_string):
     # this will take a string of numbers and math characters and produce a result. 
@@ -262,19 +335,24 @@ class DiceRolls:
 
 if __name__ == '__main__':
   test_strings = [ '4d100+45+(1d6-4)',
-                  'repeat(1D100 45,10)',
                   '1D100 45',
-                  '50',
                   '45 # rolling for intelligence',
                   'i farted',
                   "45 + 45 + 23 (10-1) # hello#hello #hello #herloo!",
-                  '1d6+3']
+                  '1d6+3',
+                  '50']
   
 
   for test_string in test_strings:
     print ("///////////////////////////////////////////////////////////////////")
-    myrolls = DiceRolls(test_string)
+    myrolls = DiceRolls(test_string, repeat=10, keep=-3)
 
     for dice in myrolls.getrolls():
       print (dice)
-      print (dice.is_stat_check())
+
+  myrolls = DiceRolls("50", repeat=5, keep=2)
+  for dice in myrolls.getrolls():
+      print (dice)
+  myrolls = DiceRolls("50", repeat=5, keep=-2)
+  for dice in myrolls.getrolls():
+      print (dice)
