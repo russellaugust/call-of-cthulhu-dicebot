@@ -1,6 +1,8 @@
 import discord, random, asyncio, os
 from slugify import slugify
 from discord.ext import commands
+from discord_slash import SlashCommand, SlashContext
+from discord_slash.utils.manage_commands import create_choice, create_option
 import diceroller
 import mathtools
 from settings import Settings
@@ -107,6 +109,7 @@ class Dice(commands.Cog):
         author_avatar_url = ctx.author.avatar_url or ctx.author.default_avatar_url
         embed.set_author(name=ctx.author.display_name, icon_url=author_avatar_url)
         await ctx.send(embed=embed)
+        await ctx.message.delete()
 
     @commands.command(pass_context=True)
     async def test(self, ctx, *, arg=None):
