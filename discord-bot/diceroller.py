@@ -1,5 +1,4 @@
-import enum
-import re, random, ast, time, datetime, secrets
+import re, ast, time, datetime, secrets
 
 from asyncio.base_events import _run_until_complete_cb
 
@@ -32,12 +31,12 @@ class RollResult:
     '''return an appropriate string for the content'''
     pretty_string = ""
     if self.stat:
-      pretty_string = f"{self.sumtotal} is a **{self.get_success()}**"
+      pretty_string = f"{self.sumtotal}/{self.stat} is a **{self.get_success()}**"
     else:
       pretty_string = f"{self.equation} = {self.sumtotal}"
 
     if self.omit:
-        pretty_string = f"~~{pretty_string}~~"
+        pretty_string = f"||{pretty_string}||"
 
     return pretty_string
   
