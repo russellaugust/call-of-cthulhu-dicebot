@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import requests, diceroller
+import requests, diceroller, mathtools, settings
 
 def __roll_with_format__(interaction, rolls, additional_comment=""):
 
@@ -27,8 +27,8 @@ def __roll_with_format__(interaction, rolls, additional_comment=""):
     comment = rolls.getroll().get_comment() if rolls.getroll().get_comment() else ""
     embed = discord.Embed(title=f"{comment}{additional_comment}", colour=discord.Colour(color), description=description)
 
-    author_avatar_url = interaction.user.avatar.url or interaction.user.display_avatar.url
-    embed.set_author(name=interaction.user.display_name, icon_url=author_avatar_url)
+    #author_avatar_url = interaction.user.avatar.url or interaction.user.display_avatar.url
+    #embed.set_author(name=interaction.user.display_name, icon_url=author_avatar_url)
     #embed.set_author(name=f"{ctx.author.display_name} - {comment}{additional_comment}", icon_url=author_avatar_url)
 
     return embed
@@ -36,6 +36,7 @@ def __roll_with_format__(interaction, rolls, additional_comment=""):
 class MyCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        self.settings = settings.Settings()
 
     @app_commands.command()
     @app_commands.describe(dice='Dice or stat to roll.')
@@ -62,9 +63,31 @@ class MyCog(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=False)
 
     @app_commands.command(name="roll_improvements")
-    @app_commands.describe(dice='Stats to Improve, can be one or more.')
-    async def roll_improvements(self, interaction: discord.Interaction, dice: str):
+    @app_commands.describe(stats='Stats to Improve, can be one or more and must be separated by a space.')
+    async def roll_improvements(self, interaction: discord.Interaction, stats: str):
         """ Roll Improvements """
+
+        description = ""
+        stats = stats.split(" ")
+        roll = self.settings.dice_improve
+        for stat in stats:
+            if mathtools.RepresentsInt(stat):
+                dice = diceroller.DiceRolls(stat) # roll against the stat
+                if dice.getroll().get_sumtotal() >= int(stat): # if the total roll is greater than the stat
+                    stat_improve_roll = diceroller.DiceRolls(roll)
+                    stat_improvement = stat_improve_roll.getroll().get_sumtotal() + int(stat)
+                    description += f"\nStat with {int(stat)} is now {stat_improvement} (1D100={dice.getroll().get_sumtotal()}, {roll}={stat_improve_roll.getroll().get_sumtotal()})"
+                else:
+                    description += f"\nStat with {int(stat)} is not improving (1D100={dice.getroll().get_sumtotal()})"
+
+        if description == "":
+            description = "No stats improved. Sorry!"
+
+        embed = discord.Embed(colour=discord.Colour(0x24ed60), description=description)
+        #author_avatar_url = interaction.user.avatar.url or interaction.user.display_avatar.url
+        #embed.set_author(name=interaction.user.display_name, icon_url=author_avatar_url)
+        await interaction.response.send_message(embed=embed)
+
         diceresult = diceroller.DiceRolls(dice, repeat=2, keep=1)
         embed = __roll_with_format__(interaction=interaction, rolls=diceresult)
         await interaction.response.send_message(embed=embed, ephemeral=False)
