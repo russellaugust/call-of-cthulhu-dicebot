@@ -7,10 +7,6 @@ from discord.ext import commands
 import mdtools
 import os, uuid, requests
 
-def skill_list():
-    skills = requests.get(f"http://localhost:8000/charactersheet/skills").json()
-    return [app_commands.Choice(name=skill['name'], value=skill['id']) for skill in skills['skills']]
-
 class GeneralCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -38,17 +34,19 @@ class GeneralCog(commands.Cog):
         else:
             await interaction.response.send_message(content="This only works in threads", ephemeral=True)
     
+
     @app_commands.command(name="hello")
     async def hello(self, interaction: discord.Interaction) -> None:
         """ Say Hello to the bot """
         await interaction.response.send_message(f"Hi, {interaction.user.mention}, I'm Barnautomaton 3000. I was pieced back together at Miskatonic University and now my brain is in a jar!")
 
+
     async def skill_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         skills = requests.get(f"http://localhost:8000/charactersheet/skills").json()
         if current == "": 
-            return [app_commands.Choice(name="", value="")]
+            return []
         else:
-            skills_to_return = []
+            skills_to_return = [] # blank results
             for skill in skills['skills']:
                 if current.lower() in skill['name'].lower():
                     name = skill['name']
@@ -63,8 +61,7 @@ class GeneralCog(commands.Cog):
     @app_commands.autocomplete(skillid=skill_autocomplete)
     @app_commands.describe(
         skillid="Skill info.  Only top 25 are visible, type to find more.",
-        hide="Hide result from channel? Only you will see this."
-    )
+        hide="Hide result from channel? Only you will see this." )
     async def skill(self, interaction: discord.Interaction, skillid: str, hide: bool = False) -> None:
         """ Skill by id """
         skill = requests.get(f"http://localhost:8000/charactersheet/skill/{skillid}").json()
@@ -72,8 +69,11 @@ class GeneralCog(commands.Cog):
         specialization = f"" if skill['specialization'] == "" else f"[{skill['specialization']}]"
         name_row_list = [skill['name'], category, specialization]
         name_row = ' '.join(filter(None, name_row_list))
+        
+        embed = discord.Embed(title=f"{name_row} | {skill['base_points']}%", colour=discord.Colour(0x804423), description=skill['description'])
+
         await interaction.response.send_message(
-            content=f"**{name_row}** | {skill['base_points']}%\n{skill['description']}",
+            embed=embed,
             ephemeral=hide)
 
     @app_commands.command(name="make_screenplay")
