@@ -52,17 +52,6 @@ async def set(ctx, *, arg=None):
     else:
         await ctx.send("under construction")
 
-
-@bot.command()
-async def whocares(ctx):
-    '''who cares about me, based on that one chart.'''
-    await ctx.send("Awaiting more data...")
-
-@bot.command()
-async def icare(ctx):
-    '''who cares about me, based on that one chart.'''
-    await ctx.send("Awaiting more data...")
-
 @bot.command()
 async def testing(ctx):
     '''General area for testing.'''
@@ -158,7 +147,6 @@ async def demoing(ctx):
     if voice_channel != None:
         channel = voice_channel.name
         vc = await voice_channel.connect()
-        #vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source="C:<path_to_file>"))
         print ("okay something worked")
         # Sleep while audio is playing.
         while vc.is_playing():

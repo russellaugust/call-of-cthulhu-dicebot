@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <body>
+            <form id="myForm" action="{% url 'charactersheet:charactersheet' characterid %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ character.investigator_name }}<br>
+                Player: {{ character.player_fk.name }}<br>
+                {{ character.occupation }}<br>
+                {{ character.birthplace }}<br>
+                {{ character.sex }}<br>
+                {{ character.age }}<br>
+                <table>
+                    <tr>
+                        <td>STR <input id="" type="text" name="" value="{{ character.strength }}" readonly="readonly" style='width:20%'/></td>
+                        <td>INT <input id="" type="text" name="" value="{{ character.intelligence }}" readonly="readonly"style='width:20%'/></td>
+                        <td>APP <input id="" type="text" name="" value="{{ character.appearance }}" readonly="readonly"style='width:20%'/></td>
+                        <td>DEX <input id="" type="text" name="" value="{{ character.dexterity }}" readonly="readonly"style='width:20%'/></td>
+                    </tr>
+                    <tr>
+                        <td>EDU <input id="" type="text" name="" value="{{ character.education }}" readonly="readonly" style='width:20%'/></td>
+                        <td>SIZ <input id="" type="text" name="" value="{{ character.size }}" readonly="readonly"style='width:20%'/></td>
+                        <td>CON <input id="" type="text" name="" value="{{ character.constitution }}" readonly="readonly"style='width:20%'/></td>
+                        <td>POW <input id="" type="text" name="" value="{{ character.power }}" readonly="readonly"style='width:20%'/></td>
+                    </tr>
+                </table> 
+                MAGIC POINTS: {{character.magic_max}}<br>
+                MOV: {{character.move}}<br>
+                HP: {{character.hp}} of {{character.hp_max}}<br>
+                SAN: {{character.san}} of {{character.san_max}}<br>
+                SAN STARTING TODAY: {{character.san_daystart}}<br>
+                DAMAGE BONUS: {{character.damage_bonus}}<br>
+                BUILD: {{character.build}}<br>
+                
+                <p><button value="Submit" type="submit">Submit</button></p>
+            </form>
+        </body>
+    </head>
+</html>
