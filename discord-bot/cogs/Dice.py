@@ -102,7 +102,7 @@ class Dice(commands.Cog):
         embed = self.__successlevel_image__(embed, dice.getroll())
             
         # read the results if announce is on and the bot is in a channel
-        self.__announce_roll__(ctx, dice)          
+        self.__announce_roll__(ctx, dice)
         
         # dramatic pause for fumbles and criticals  
         await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None
