@@ -1,12 +1,19 @@
 from discord.ext import commands, tasks
 import credentials as cred
 import discord
-import aiohttp, requests
+import aiohttp, requests, logging
 import mdtools
 
 MY_GUILD = discord.Object(id=cred.guild)
 APPLICATION_ID = cred.application_id
 TOKEN = cred.token
+
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger('discord')
+# logger.setLevel(logging.DEBUG)
+# handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+# handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+# logger.addHandler(handler)
 
 class CoCBot(commands.Bot):
     def __init__(self, *, intents: discord.Intents, application_id: int):
@@ -14,6 +21,7 @@ class CoCBot(commands.Bot):
         self.initial_extensions = [
             'cogs.SlashDice',
             'cogs.SlashGeneral',
+            'cogs.SlashVoice',
         ]
 
     async def setup_hook(self):
