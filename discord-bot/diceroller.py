@@ -158,9 +158,11 @@ class RollResult:
 
 class DiceRolls:
   def __init__(self, rolls_arg, repeat=1, keep=0):
-    # omit is a + or - integer. +1 means the highest 1 roll, -1 means lowest 1 roll, 0 means keep all rolls. +2 is highest 2 rolls, etc.
     self.rolls = []
+
+    # omit is a + or - integer. +1 means the highest 1 roll, -1 means lowest 1 roll, 0 means keep all rolls. +2 is highest 2 rolls, etc.
     omit = True if keep > 0 or keep < 0 else False
+    
     rolls_arg = rolls_arg.lower() # normalize the argument
     
     # roll the dice [repeat] times and sets omit state for all rolls
@@ -168,8 +170,8 @@ class DiceRolls:
 
     if omit is True and self.rolls[0].is_real():
         '''this will reprocess the rolls and mark the correct set as valid or invalid.'''
+        
         # sort the results and pick the top or bottom n results.  Set the rolls field to omit true false
-        #most = max(roll.get_sumtotal() for roll in self.rolls)
         rolls_sorted = sorted((roll.get_sumtotal() for roll in self.rolls), reverse=True)
         rolls_to_omit = rolls_sorted[:keep] if keep > 0 else rolls_sorted[keep:]
         print(rolls_to_omit)
@@ -214,7 +216,7 @@ class DiceRolls:
     return rolls
 
   def not_omitted_rolls(self):
-    # returns a list of the rolls there were not omitted
+    # returns a list of the rolls that were not omitted
     rolls = []
     for roll in self.rolls:
         if roll.is_omitted() is False:
