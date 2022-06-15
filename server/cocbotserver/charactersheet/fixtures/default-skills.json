@@ -1,0 +1,14 @@
+[
+    {
+        "fields": {
+            "base_points": 5,
+            "description": "Familiar with all shapes and sizes casseroles.  Can determine the ingredients of one by looking at it and smelling.",
+            "experience_points": 0,
+            "name": "Casserole Recipes",
+            "occupation_points": 10,
+            "personal_points": 30
+        },
+        "model": "charactersheet.skill",
+        "pk": 1
+    }
+]

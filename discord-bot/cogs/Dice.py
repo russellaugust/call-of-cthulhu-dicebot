@@ -37,10 +37,11 @@ class Dice(commands.Cog):
             color = color if roll.is_omitted() else roll.get_success_color()
 
         comment = rolls.getroll().get_comment() if rolls.getroll().get_comment() else ""
-        embed = discord.Embed(title=f"{comment}{additional_comment}", colour=discord.Colour(color), description=description)
+        embed = discord.Embed(title=description, colour=discord.Colour(color), description=f"{comment}{additional_comment}")
 
         author_avatar_url = ctx.author.avatar_url or ctx.author.default_avatar_url
         embed.set_author(name=ctx.author.display_name, icon_url=author_avatar_url)
+        #embed.set_author(name=f"{ctx.author.display_name} - {comment}{additional_comment}", icon_url=author_avatar_url)
 
         return embed
 
@@ -101,15 +102,15 @@ class Dice(commands.Cog):
         embed = self.__successlevel_image__(embed, dice.getroll())
             
         # read the results if announce is on and the bot is in a channel
-        self.__announce_roll__(ctx, dice)          
+        self.__announce_roll__(ctx, dice)
         
         # dramatic pause for fumbles and criticals  
         await asyncio.sleep(4) if dice.getroll().get_success() == "fumble" or dice.getroll().get_success() == "critical" else None
         
         author_avatar_url = ctx.author.avatar_url or ctx.author.default_avatar_url
         embed.set_author(name=ctx.author.display_name, icon_url=author_avatar_url)
-        await ctx.send(embed=embed)
         await ctx.message.delete()
+        await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)
     async def test(self, ctx, *, arg=None):
@@ -117,28 +118,32 @@ class Dice(commands.Cog):
         dice.override_sumtotal(int(arg))
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - testing only.")
         embed = self.__successlevel_image__(embed, dice.getroll())
+        await ctx.message.delete()
         await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True, aliases=['r+', 'b'])
+    @commands.command(pass_context=True, aliases=['r+', 'b', 'adv'])
     async def bonus(self, ctx, *, arg=None):
         dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=2, keep=-1)
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - with bonus.")
+        await ctx.message.delete()
         await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True, aliases=['r-', 'p'])
+    @commands.command(pass_context=True, aliases=['r-', 'p', 'disadv'])
     async def penalty(self, ctx, *, arg=None):
         dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=2, keep=1)
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - with penalty.")
+        await ctx.message.delete()
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True, aliases=['rp', 'rpt'])
     async def repeat(self, ctx, *, arg=None):
         dice = diceroller.DiceRolls(arg if arg else self.settings.dice_default, repeat=10, keep=0)
         embed = self.__roll_with_format__(ctx=ctx, rolls=dice, additional_comment=" - repeat.")
+        await ctx.message.delete()
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['i'], 
-                      brief='-i [STATS TO IMPROVE] e.g. -i 50, or -i 30 50 40 30 for multiple stats.',  
+                      brief='-i [STATS TO IMPROVE] e.g. .i 50, or .i 30 50 40 30 for multiple stats.',  
                       description="This is for when you're improving a stat.  it rolls a 1d100 against the stat. If the roll is above the stat, it will roll a 1Dx (from settings) and adds it to the stat. .i or .improve will work.\n\n-i [STATS TO IMPROVE] e.g. -i 50, or -i 30 50 40 30 for multiple stats.")
     async def improve(self, ctx, *, arg=None):
         description = ""
@@ -158,7 +163,9 @@ class Dice(commands.Cog):
             description = "No stats improved. Sorry!"
 
         embed = discord.Embed(colour=discord.Colour(0x24ed60), description=description)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.default_avatar_url)    
+        author_avatar_url = ctx.author.avatar_url or ctx.author.default_avatar_url
+        embed.set_author(name=ctx.author.display_name, icon_url=author_avatar_url)
+        await ctx.message.delete()
         await ctx.send(embed=embed)
 
     @commands.group(aliases=['h'])

@@ -1,0 +1,20 @@
+[
+    {
+        "fields": {
+            "description": "Root path to metadata files",
+            "key": "metadata_path",
+            "value": "/Volumes"
+        },
+        "model": "codebook.settings",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "description": "Root path to media",
+            "key": "media_path",
+            "value": "/Volumes"
+        },
+        "model": "codebook.settings",
+        "pk": 2
+    }
+]
