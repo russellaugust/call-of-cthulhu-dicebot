@@ -11,3 +11,6 @@ def extract_code_fences(text):
             groupNum = groupNum + 1
             code_fences.append(match.group(groupNum))
     return code_fences
+
+# if __name__ == "__main__":
+#    Do something here
