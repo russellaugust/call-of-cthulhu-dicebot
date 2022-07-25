@@ -13,9 +13,18 @@ class GeneralCog(commands.Cog):
 
     async def __make_and_send_screenplay__ (self, interaction) -> None:
         if isinstance(interaction.channel, discord.Thread):
+            # Get all messages from the channel as a list
             all_messages = [f"{message.content}" async for message in interaction.channel.history(oldest_first=True)]
-            fountain_md = mdtools.extract_code_fences('\n'.join(all_messages))
-            fountain_md_joined = '\n'.join(fountain_md)
+            
+            # extract the code fence from each message individually, and create a new list
+            fountain_md = []
+            for message in all_messages:
+                fences = mdtools.extract_code_fences(message)
+                if len(fences) > 0:
+                    fountain_md.append('\n\n'.join(fences))
+            
+            # join each line together with a line break.
+            fountain_md_joined = '\n\n'.join(fountain_md)
 
             # make fountain file
             tempfilename = f"{interaction.channel.name}_{uuid.uuid4()}.fountain"
