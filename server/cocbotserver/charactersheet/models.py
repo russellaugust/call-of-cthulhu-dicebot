@@ -10,19 +10,27 @@ class Player(models.Model):
     def __str__(self):
         return str(f"{self.name}")
 
+class DiscordMessage(models.Model):        
+    messagetime = models.DateField()
+    discord_id = models.IntegerField(blank=True,null=True,help_text="")
+    user = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)
+    channel = models.IntegerField(blank=True,null=True,help_text="")
+    content = models.CharField(blank=True,max_length=500,help_text="")
+    reply_msg_id = models.IntegerField(blank=True,null=True,help_text="")
+        
+    def __str__(self):
+        return str(f"{self.messagetime}")
+
 class Roll(models.Model):
     player_fk   = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)
+    message_fk  = models.ForeignKey(DiscordMessage, on_delete=models.CASCADE,blank=True,null=True)
     messagetime = models.DateTimeField(auto_now_add=True, blank=True)
-    #username    = models.CharField(blank=True,max_length=50,help_text="")
-    #nick        = models.CharField(blank=True,max_length=50,help_text="")
-    argument    = models.CharField(blank=True,max_length=300,help_text="")
-    equation    = models.CharField(blank=True,max_length=300,help_text="")
-    result      = models.CharField(blank=True,max_length=300,help_text="")
+    argument    = models.CharField(blank=True,max_length=50,help_text="")
+    equation    = models.CharField(blank=True,max_length=50,help_text="")
+    result      = models.CharField(blank=True,max_length=50,help_text="")
     stat        = models.IntegerField(blank=True,null=True,help_text="")
-    success     = models.CharField(blank=True,max_length=300,help_text="")
-    comment     = models.CharField(blank=True,max_length=300,help_text="")
-    guild       = models.CharField(blank=True,max_length=300,help_text="")
-    channel     = models.CharField(blank=True,max_length=300,help_text="")
+    success     = models.CharField(blank=True,max_length=50,help_text="")
+    comment     = models.CharField(blank=True,max_length=50,help_text="")
 
     def __str__(self):
         return str(f"{self.name}")
