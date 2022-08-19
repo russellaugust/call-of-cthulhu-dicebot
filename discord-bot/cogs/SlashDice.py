@@ -3,6 +3,10 @@ from discord import app_commands
 from discord.ext import commands
 import requests, diceroller, mathtools, settings, random, os, asyncio
 from slugify import slugify
+from diceroller import DiceRolls
+import cocapi
+
+API_LINK = "http://localhost:8000/charactersheet/"
 
 #discord.opus.load_opus('opus')
 
@@ -16,15 +20,18 @@ class MyCog(commands.Cog):
     @app_commands.describe(dice='Dice or stat to roll.')
     async def roll(self, interaction: discord.Interaction, dice: str, comment: str = "", repeat: int = 1, keep: int = 0):
         """ Basic Dice Rolls """
-        diceresult = diceroller.DiceRolls(dice, repeat=repeat, keep=keep)
+        diceresult = diceroller.DiceRolls(dice, repeat=repeat, keep=keep, comment=comment)
         
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=comment)
+        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult)
         
         # embed a GIF or image when needed
         embed = self.__successlevel_image__(embed, diceresult.getroll())
-            
+
         # read the results if announce is on and the bot is in a channel
         self.__announce_roll__(interaction, diceresult.getroll())
+        
+        # add the rolls to the database
+        self.__add_to_db__(interaction, diceresult)
         
         # dramatic pause for fumbles and criticals  
         await asyncio.sleep(4) if diceresult.getroll().get_success() == "fumble" or diceresult.getroll().get_success() == "critical" else None
@@ -37,11 +44,14 @@ class MyCog(commands.Cog):
     async def roll_advantage(self, interaction: discord.Interaction, dice: str, comment: str = ""):
         """ Roll Dice with Advantage / Bonus """
         diceresult = diceroller.DiceRolls(dice, repeat=2, keep=-1)
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f"{comment} - *with advantage*")
+        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *with advantage*")
         
         not_omitted = diceresult.not_omitted_rolls()[0]
         embed = self.__successlevel_image__(embed, not_omitted)
         self.__announce_roll__(interaction, not_omitted)
+        
+        # add the rolls to the database
+        self.__add_to_db__(interaction, diceresult)
 
         await interaction.response.send_message(embed=embed, ephemeral=False)
 
@@ -50,11 +60,14 @@ class MyCog(commands.Cog):
     async def roll_disadvantage(self, interaction: discord.Interaction, dice: str, comment: str = ""):
         """ Roll Dice with Disadvantage / Penalty """
         diceresult = diceroller.DiceRolls(dice, repeat=2, keep=1)
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f"{comment} - *with disadvantage*")
+        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *with disadvantage*")
 
         not_omitted = diceresult.not_omitted_rolls()[0]
         embed = self.__successlevel_image__(embed, not_omitted)
         self.__announce_roll__(interaction, not_omitted)
+        
+        # add the rolls to the database
+        self.__add_to_db__(interaction, diceresult)
 
         await interaction.response.send_message(embed=embed, ephemeral=False)
 
@@ -64,7 +77,7 @@ class MyCog(commands.Cog):
         """ Command for testing roll results only. """
         diceresult = diceroller.DiceRolls(str(stat), repeat=2, keep=-1)
         diceresult.override_sumtotal(stat)
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f"{comment} - *TEST ONLY*")
+        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *TEST ONLY*")
         
         not_omitted = diceresult.not_omitted_rolls()[0]
         embed = self.__successlevel_image__(embed, not_omitted)
@@ -97,20 +110,75 @@ class MyCog(commands.Cog):
         #author_avatar_url = interaction.user.avatar.url or interaction.user.display_avatar.url
         #embed.set_author(name=interaction.user.display_name, icon_url=author_avatar_url)
         await interaction.response.send_message(embed=embed)
+    
+    
+    # # TODO this is wrong, using old copy of def, revise to use a skil list for the PLAYER'S CHARACTER
+    # async def character_skill_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+    #     skills = requests.get(f"http://localhost:8000/charactersheet/skills").json()
+        
+    #     # TODO This should list the favorites first! Good place for this.
+    #     if current == "": 
+    #         return []
+    #     else:
+    #         skills_to_return = [] # blank results
+    #         for skill in skills['skills']:
+    #             if current.lower() in skill['name'].lower():
+    #                 name = skill['name']
+    #                 specialization = f"" if skill['specialization'] == "" else f"[{skill['specialization']}]"
+    #                 skills_to_return.append(
+    #                     app_commands.Choice(
+    #                         name=' '.join(filter(None, [name, specialization])),
+    #                         value=str(skill['id']) ) )
+    #         return skills_to_return[0:24]
 
-        diceresult = diceroller.DiceRolls(dice, repeat=2, keep=1)
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult)
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+    # @app_commands.command(name="my_roll")
+    # @app_commands.autocomplete(skillid=character_skill_autocomplete)
+    # @app_commands.describe(
+    #     skill='Roll for players with character sheets.')
+    # async def my_roll(self, interaction: discord.Interaction, skillid: str, comment: str = "", repeat: int = 1, keep: int = 0) -> None:
+    #     """ Roll for players with character sheets"""
+    #     skill = requests.get(f"http://localhost:8000/charactersheet/skill/{skillid}").json()
+    #     category = f"" if skill['category'] == "" else f"[{skill['category']}]"
+    #     specialization = f"" if skill['specialization'] == "" else f"[{skill['specialization']}]"
+    #     name_row_list = [skill['name'], category, specialization]
+    #     name_row = ' '.join(filter(None, name_row_list))
+        
+    #     embed = discord.Embed(title=f"{name_row} | {skill['base_points']}%", colour=discord.Colour(0x804423), description=skill['description'])
+
+    #     await interaction.response.send_message(
+    #         embed=embed,
+    #         ephemeral=False)
+
+    
+    # async def my_roll(self, interaction: discord.Interaction, dice: str, comment: str = "", repeat: int = 1, keep: int = 0):
+    #     """ Basic Dice Rolls """
+    #     diceresult = diceroller.DiceRolls(dice, repeat=repeat, keep=keep)
+        
+    #     embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=comment)
+        
+    #     # embed a GIF or image when needed
+    #     embed = self.__successlevel_image__(embed, diceresult.getroll())
+            
+    #     # read the results if announce is on and the bot is in a channel
+    #     self.__announce_roll__(interaction, diceresult.getroll())
+        
+    #     # dramatic pause for fumbles and criticals  
+    #     await asyncio.sleep(4) if diceresult.getroll().get_success() == "fumble" or diceresult.getroll().get_success() == "critical" else None
+
+    #     # send response
+    #     await interaction.response.send_message(embed=embed, ephemeral=False)
 
     def __roll_with_format__(self, interaction, rolls, additional_comment=""):
 
         # FAIL: the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
         if rolls.getroll().error():
-            embed = discord.Embed(colour=discord.Colour(0xbf1919), description="*SPROÜTS!*   That's some bad syntax.")
+            embed = discord.Embed(colour=discord.Colour(0xbf1919), 
+                                  description="*SPROÜTS!*   That's some bad syntax.")
 
         # FAIL: if someone accidentally writes d00, which means roll a zero-sided die
         elif "d00" in rolls.getroll().get_argument():
-            embed = discord.Embed(colour=discord.Colour(0xbf1919), description="This is embarrassing... I doubt you meant to roll that.")
+            embed = discord.Embed(colour=discord.Colour(0xbf1919), 
+                                  description="This is embarrassing... I doubt you meant to roll that.")
 
         # PASS: If the success field in the first dice roll is filled in, then that means it had to be a stat roll with a 1d100 so it. 
         elif rolls.getroll().stat_exists():
@@ -131,7 +199,42 @@ class MyCog(commands.Cog):
         #embed.set_author(name=f"{ctx.author.display_name} - {comment}{additional_comment}", icon_url=author_avatar_url)
 
         return embed
+    
+    def __add_to_db__(self, interaction: discord.Interaction, rolls: DiceRolls):
+        """
+        Save the roll to the remote database.
+        """
 
+        # check if player is in the system, if not add.
+        player = cocapi.get_or_create_player(json={
+            "name": "",
+            "discord_name": interaction.user.name,
+            "discord_id": interaction.user.id })
+        
+        # check if this particular channel is in the system, if not, add.
+        parent_id = interaction.channel.parent_id if isinstance(interaction.channel, discord.Thread) else None
+        channel = cocapi.get_or_create_channel(json={
+            "name": interaction.channel.name,
+            "channel_id": interaction.channel.id,
+            "parent_id": parent_id })
+
+        all_rolls = [
+            {
+                "messagetime": interaction.created_at.isoformat(),
+                "argument": roll.get_argument(),
+                "equation": roll.get_equation(),
+                "result": roll.get_sumtotal(),
+                "stat": roll.get_stat(),
+                "success": roll.get_success(),
+                "comment": roll.get_comment(),
+                "omit": roll.is_omitted(),
+                "player": player.get('id'),
+                "discordchannel": channel.get('id')
+            }
+            for roll in rolls.getrolls()]
+        
+        for roll in all_rolls:
+            cocapi.create_roll(json=roll)
 
     def __successlevel_image__(self, embed, roll):
         # returns a discord.embed image with a gif that matches the roll success

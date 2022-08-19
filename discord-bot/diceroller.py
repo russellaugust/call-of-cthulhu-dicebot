@@ -157,7 +157,7 @@ class RollResult:
 
 
 class DiceRolls:
-  def __init__(self, rolls_arg, repeat=1, keep=0):
+  def __init__(self, rolls_arg, repeat=1, keep=0, comment=None):
     self.rolls = []
 
     # omit is a + or - integer. +1 means the highest 1 roll, -1 means lowest 1 roll, 0 means keep all rolls. +2 is highest 2 rolls, etc.
@@ -166,7 +166,7 @@ class DiceRolls:
     rolls_arg = rolls_arg.lower() # normalize the argument
     
     # roll the dice [repeat] times and sets omit state for all rolls
-    self.rolls = [self.roll_the_dice(rolls_arg, omit=omit) for x in range(0, repeat)]
+    self.rolls = [self.roll_the_dice(rolls_arg, omit=omit, comment=comment) for x in range(0, repeat)]
 
     if omit is True and self.rolls[0].is_real():
         '''this will reprocess the rolls and mark the correct set as valid or invalid.'''
@@ -242,19 +242,14 @@ class DiceRolls:
       '''
       pass
 
-  def roll_the_dice(self, roll_arg, omit=False):
+  def roll_the_dice(self, roll_arg, comment=None, omit=False):
     '''parse the roll'''
 
     argument = roll_arg
     equation = None
     total = None
     stat = None
-    comment = None
 
-    if '#' in roll_arg:
-      argument = roll_arg.split('#', 1)[0].strip() # takes off extra whitespace from split argument, cleans it up
-      comment = roll_arg.split('#', 1)[1].strip()
-  
     # a roll for a stat check, so a 1d100 against a stat or just a clean number
     if bool(re.match(r'^[0-9]+$', argument)) or bool(re.match(r'^1d100\s[0-9]+$', argument)):
       
