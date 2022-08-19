@@ -4,36 +4,68 @@ from django.db import models
 # Create your models here.
 
 class Player(models.Model):
-    name       = models.CharField(blank=False,max_length=32,help_text="")
-    discord_id = models.IntegerField(blank=True,null=True,help_text="")
+    name         = models.CharField(blank=True,max_length=32,help_text="")
+    discord_name = models.CharField(blank=False,max_length=32,help_text="")
+    discord_id   = models.IntegerField(unique=True,blank=False,null=False,help_text="")
 
     def __str__(self):
-        return str(f"{self.name}")
+        return str(f"{self.discord_name} | {self.name}")
+    
+    
+class DiscordChannel(models.Model):
+    name       = models.CharField(blank=False,max_length=32,help_text="")
+    channel_id = models.IntegerField(unique=True,blank=False,null=False,help_text="")
+    parent_id  = models.IntegerField(blank=True,null=True,help_text="")
+    
+    def __str__(self):
+        return str(f"{self.name}: {self.channel_id}")
 
-class DiscordMessage(models.Model):        
-    messagetime = models.DateField()
-    discord_id = models.IntegerField(blank=True,null=True,help_text="")
-    user = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)
-    channel = models.IntegerField(blank=True,null=True,help_text="")
-    content = models.CharField(blank=True,max_length=500,help_text="")
+
+class DiscordMessage(models.Model): 
+    messagetime = models.DateTimeField(blank=False)
+    discord_id = models.IntegerField(unique=True,blank=False,null=False,help_text="")
+    content = models.CharField(blank=True,max_length=2500,help_text="")
     reply_msg_id = models.IntegerField(blank=True,null=True,help_text="")
+    
+    player  = models.ForeignKey(Player, on_delete=models.CASCADE,blank=False,null=False)
+    discordchannel = models.ForeignKey(DiscordChannel, on_delete=models.CASCADE,blank=False,null=False)
         
     def __str__(self):
-        return str(f"{self.messagetime}")
+        return str(f"{self.player.discord_name} - MSG{self.discord_id} - {self.messagetime}")
 
 class Roll(models.Model):
-    player_fk   = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)
-    message_fk  = models.ForeignKey(DiscordMessage, on_delete=models.CASCADE,blank=True,null=True)
-    messagetime = models.DateTimeField(auto_now_add=True, blank=True)
-    argument    = models.CharField(blank=True,max_length=50,help_text="")
-    equation    = models.CharField(blank=True,max_length=50,help_text="")
-    result      = models.CharField(blank=True,max_length=50,help_text="")
+    messagetime = models.DateTimeField(blank=False)
+    argument    = models.CharField(blank=True,null=True,max_length=50,help_text="")
+    equation    = models.CharField(blank=True,null=True,max_length=50,help_text="")
+    result      = models.CharField(blank=True,null=True,max_length=50,help_text="")
     stat        = models.IntegerField(blank=True,null=True,help_text="")
-    success     = models.CharField(blank=True,max_length=50,help_text="")
-    comment     = models.CharField(blank=True,max_length=50,help_text="")
+    success     = models.CharField(blank=True,null=True,max_length=50,help_text="")
+    comment     = models.CharField(blank=True,null=True,max_length=100,help_text="")
+    omit        = models.BooleanField(blank=False,null=False,help_text="")
+    
+    player      = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)
+    discordchannel     = models.ForeignKey(DiscordChannel, on_delete=models.CASCADE,blank=False,null=False)
 
     def __str__(self):
-        return str(f"{self.name}")
+        return " | ".join(filter(None, 
+                                 [self.player.discord_name,
+                                 f"{self.messagetime:%Y-%m-%d %H:%M:%S}", 
+                                 self.argument, 
+                                 self.success]))
+        # return str(f"{self.name}")
+
+class Location(models.Model):
+    place    = models.CharField(blank=False,max_length=32,help_text="")
+    INT_EXT_CHOICES = [
+        ('INT', 'Interior'),
+        ('EXT', 'Exterior'),
+        ('INT/EXT', 'Interior/Exterior'),]
+    int_ext     = models.CharField(blank=False,max_length=32,choices=INT_EXT_CHOICES,help_text="")
+    description = models.CharField(blank=True,max_length=2000,help_text="")
+    connection  = models.ManyToManyField("self",blank=True,help_text="")
+
+    def __str__(self):
+        return str(f"{self.int_ext} - {self.place}")
 
 class Skill(models.Model):
     name            = models.CharField(blank=False,max_length=32,help_text="")
@@ -49,11 +81,10 @@ class Skill(models.Model):
             return str(f"{self.name} ({self.specialization})")
 
 class CharacterSkill(models.Model):
-    skill_fk           = models.ForeignKey(Skill, on_delete=models.CASCADE,blank=True,null=False)
-    base_calc_points   = models.IntegerField(default=0,blank=False,null=False,help_text="")
-    personal_points    = models.IntegerField(default=0,blank=False,null=False,help_text="")
-    occupation_points  = models.IntegerField(default=0,blank=False,null=False,help_text="")
-    experience_points  = models.IntegerField(default=0,blank=False,null=False,help_text="")
+    skill_fk           = models.ForeignKey(Skill, on_delete=models.CASCADE,blank=False,null=False)
+    personal_points    = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from Personal pool.")
+    occupation_points  = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from chosen Occupation pool.")
+    experience_points  = models.IntegerField(default=0,blank=False,null=False,help_text="All points beyond Base, Personal and Occupation.")
     improve            = models.BooleanField(default=False,help_text="")
     favorite           = models.BooleanField(default=False,help_text="")
 
@@ -64,7 +95,7 @@ class CharacterSkill(models.Model):
             return str(f"{self.skill_fk.name} ({self.skill_fk.specialization})")
     
     def points(self):
-        return int(self.skill_fk + self.personal_points + self.occupation_points + self.experience_points)
+        return int(self.skill_fk.base_points + self.personal_points + self.occupation_points + self.experience_points)
 
 class Weapon(models.Model):
     skill_fk        = models.ForeignKey(Skill, on_delete=models.CASCADE,blank=True,null=True)
@@ -82,6 +113,7 @@ class Weapon(models.Model):
         return str(f"{self.name}")
 
 class Character(models.Model):
+    location_fk = models.ForeignKey(Location, on_delete=models.CASCADE,blank=True,null=True)
     characterskill_fk   = models.ManyToManyField(CharacterSkill,blank=True)
     weapon_fk           = models.ManyToManyField(Weapon,blank=True)
     player_fk           = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)

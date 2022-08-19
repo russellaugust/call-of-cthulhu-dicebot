@@ -11,10 +11,11 @@ class GeneralCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
-    async def __make_and_send_screenplay__ (self, interaction, ephemeral=False) -> None:
+    async def __make_screenplay__ (self, interaction, ephemeral=False) -> None:
         if isinstance(interaction.channel, discord.Thread):
             # Get all messages from the channel as a list
-            all_messages = [f"{message.content}" async for message in interaction.channel.history(oldest_first=True)]
+            all_messages = [f"{message.content}" 
+                            async for message in interaction.channel.history(oldest_first=True)]
             
             # extract the code fence from each message individually, and create a new list
             fountain_md = []
@@ -37,11 +38,15 @@ class GeneralCog(commands.Cog):
                     content="There appears to be no screenplay formatted items here.", 
                     ephemeral=True)
             else:                
-                await interaction.response.send_message(file=discord.File(tempfilename), ephemeral=ephemeral)
+                await interaction.response.send_message(
+                    file=discord.File(tempfilename), 
+                    ephemeral=ephemeral)
 
             os.remove(tempfilename) if os.path.exists(tempfilename) else print("The file does not exist")
         else:
-            await interaction.response.send_message(content="This only works in threads", ephemeral=True)
+            await interaction.response.send_message(
+                content="This only works in threads", 
+                ephemeral=True)
     
 
     @app_commands.command(name="hello")
@@ -88,12 +93,12 @@ class GeneralCog(commands.Cog):
     @app_commands.command(name="make_screenplay")
     async def make_screenplay(self, interaction: discord.Interaction) -> None:
         """ Creates a screenplay from the current channel or thread. """
-        await self.__make_and_send_screenplay__(interaction, ephemeral=True)
+        await self.__make_screenplay__(interaction, ephemeral=True)
 
     @app_commands.command(name="fadeout")
     async def fadeout(self, interaction: discord.Interaction) -> None:
         """ End the scene, makes a screenplay and lock the thread. """
-        await self.__make_and_send_screenplay__(interaction, ephemeral=False)
+        await self.__make_screenplay__(interaction, ephemeral=False)
         if isinstance(interaction.channel, discord.Thread) : await interaction.channel.edit(archived=True, locked=True)
 
 
