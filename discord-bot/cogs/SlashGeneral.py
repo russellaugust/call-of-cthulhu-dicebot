@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import mdtools
-import os, uuid, requests
+import os, uuid, requests, textwrap
 
 class GeneralCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -111,13 +111,15 @@ class GeneralCog(commands.Cog):
     @app_commands.command(name="template")
     async def template(self, interaction: discord.Interaction) -> None:
         """ Get a template for the screenplay format. """
+        content = """
+        ```
+        NAME
+        Dialogue.
+        ```
+        """
+
         await interaction.response.send_message(
-            content="""
-            ```
-            NAME
-            Dialogue.
-            ```
-            """, 
+            content=textwrap.dedent(content),
             ephemeral=True)
 
 
