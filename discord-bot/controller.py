@@ -50,7 +50,8 @@ class CoCBot(commands.Bot):
         
         parent_id = message.channel.parent_id if isinstance(message.channel, discord.Thread) else None
         
-        if message.channel.id in VALID_CHANNELS or parent_id in VALID_CHANNELS:
+        # if channel is part of approved group and not a DM (ephemerals are DMs)
+        if (message.channel.id in VALID_CHANNELS or parent_id in VALID_CHANNELS) and not isinstance(message.channel, discord.DMChannel):
             # check if player is in the system, if not add.
             player = cocapi.get_or_create_player(json={
                 "name": "",
