@@ -1,5 +1,8 @@
 from email.mime import base
 from django.db import models
+from django.core.validators import RegexValidator
+import math
+
 
 # Create your models here.
 
@@ -67,10 +70,16 @@ class Location(models.Model):
     def __str__(self):
         return str(f"{self.int_ext} - {self.place}")
 
+
+stats_equation = RegexValidator(
+            regex=r'^(?:STR|INT|APP|DEX|EDU|SIZ|CON|POW)[/*+-]\d+$',
+            message='Must be simple equation with STR|INT|APP|DEX|EDU|SIZ|CON|POW ie DEX/2',
+            code='invalid_equation')
+
 class Skill(models.Model):
     name            = models.CharField(blank=False,max_length=32,help_text="")
     description     = models.CharField(blank=True,max_length=6000,help_text="")
-    base_points     = models.CharField(blank=False, default="0",max_length=32,help_text="")
+    base_points     = models.CharField(blank=False, default="0",validators=[stats_equation],max_length=32,help_text="")
     category        = models.CharField(blank=True,max_length=50,help_text="")
     specialization  = models.CharField(blank=True,max_length=32,help_text="")
 
@@ -80,22 +89,6 @@ class Skill(models.Model):
         else:
             return str(f"{self.name} ({self.specialization})")
 
-class CharacterSkill(models.Model):
-    skill_fk           = models.ForeignKey(Skill, on_delete=models.CASCADE,blank=False,null=False)
-    personal_points    = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from Personal pool.")
-    occupation_points  = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from chosen Occupation pool.")
-    experience_points  = models.IntegerField(default=0,blank=False,null=False,help_text="All points beyond Base, Personal and Occupation.")
-    improve            = models.BooleanField(default=False,help_text="")
-    favorite           = models.BooleanField(default=False,help_text="")
-
-    def __str__(self):
-        if self.skill_fk.specialization == "":
-            return str(f"{self.skill_fk.name}")
-        else:
-            return str(f"{self.skill_fk.name} ({self.skill_fk.specialization})")
-    
-    def points(self):
-        return int(self.skill_fk.base_points + self.personal_points + self.occupation_points + self.experience_points)
 
 class Weapon(models.Model):
     skill_fk        = models.ForeignKey(Skill, on_delete=models.CASCADE,blank=True,null=True)
@@ -113,9 +106,7 @@ class Weapon(models.Model):
         return str(f"{self.name}")
 
 class Character(models.Model):
-    location_fk = models.ForeignKey(Location, on_delete=models.CASCADE,blank=True,null=True)
-    characterskill_fk   = models.ManyToManyField(CharacterSkill,blank=True)
-    weapon_fk           = models.ManyToManyField(Weapon,blank=True)
+    location_fk         = models.ForeignKey(Location, on_delete=models.CASCADE,blank=True,null=True)
     player_fk           = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)
     
     investigator_name   = models.CharField(verbose_name="Investigator",blank=False,max_length=50,help_text="")
@@ -187,3 +178,49 @@ class Character(models.Model):
 
     def __str__(self):
         return str(f"{self.investigator_name}")
+    
+class CharacterSkill(models.Model):
+    skill_fk           = models.ForeignKey(Skill, on_delete=models.CASCADE,blank=False,null=False)
+    character_fk       = models.ForeignKey(Character, on_delete=models.CASCADE,blank=False,null=False)
+    personal_points    = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from Personal pool.")
+    occupation_points  = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from chosen Occupation pool.")
+    experience_points  = models.IntegerField(default=0,blank=False,null=False,help_text="All points beyond Base, Personal and Occupation.")
+    improve            = models.BooleanField(default=False,help_text="")
+    favorite           = models.BooleanField(default=False,help_text="")
+
+    def __str__(self):
+        if self.skill_fk.specialization == "":
+            return str(f"{self.skill_fk.name}")
+        else:
+            return str(f"{self.skill_fk.name} ({self.skill_fk.specialization})")
+
+    def points(self):
+        base_points = self.skill_fk.base_points
+        if "STR" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("STR", str(self.character_fk.strength))
+        elif "INT" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("INT", str(self.character_fk.intelligence))
+        elif "APP" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("APP", str(self.character_fk.appearance))
+        elif "DEX" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("DEX", str(self.character_fk.dexterity))
+        elif "EDU" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("EDU", str(self.character_fk.education))
+        elif "SIZ" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("SIZ", str(self.character_fk.size))
+        elif "CON" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("CON", str(self.character_fk.constitution))
+        elif "POW" in self.skill_fk.base_points:
+            base_points = self.skill_fk.base_points.replace("POW", str(self.character_fk.power))
+            
+        base_points_floor = math.floor(eval(base_points))
+        
+        return int(base_points_floor + self.personal_points + self.occupation_points + self.experience_points)
+
+class CharacterWeapon(models.Model):
+    weapon_fk          = models.ForeignKey(Weapon, on_delete=models.CASCADE,blank=False,null=False)
+    character_fk       = models.ForeignKey(Character, on_delete=models.CASCADE,blank=False,null=False)
+    favorite           = models.BooleanField(default=False,help_text="")
+
+    def __str__(self):
+        return str(f"{self.weapon_fk.name}")

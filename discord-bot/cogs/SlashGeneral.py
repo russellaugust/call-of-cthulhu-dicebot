@@ -52,17 +52,24 @@ class GeneralCog(commands.Cog):
     @app_commands.command(name="hello")
     async def hello(self, interaction: discord.Interaction) -> None:
         """ Say Hello to the bot """
-        await interaction.response.send_message(f"Hi, {interaction.user.mention}, I'm Barnautomaton 3000. I was pieced back together at Miskatonic University and now my brain is in a jar!")
+        await interaction.response.send_message(
+            content=f"Hi, {interaction.user.mention}, I'm Barnautomaton 3000. I was pieced back together at Miskatonic University and now my brain is in a jar!")
 
 
     async def skill_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+        
+        # get full skills list
         skills = requests.get(f"http://localhost:8000/charactersheet/skills").json()
+        
         if current == "": 
+            # return blank list first
             return []
         else:
             skills_to_return = [] # blank results
             for skill in skills['skills']:
-                if current.lower() in skill['name'].lower():
+                
+                # check if search is present in both skill name and specialization
+                if current.lower() in skill['name'].lower() + skill['specialization'].lower():
                     name = skill['name']
                     specialization = f"" if skill['specialization'] == "" else f"[{skill['specialization']}]"
                     skills_to_return.append(
@@ -101,6 +108,20 @@ class GeneralCog(commands.Cog):
         await self.__make_screenplay__(interaction, ephemeral=False)
         if isinstance(interaction.channel, discord.Thread) : await interaction.channel.edit(archived=True, locked=True)
 
+    @app_commands.command(name="template")
+    async def template(self, interaction: discord.Interaction) -> None:
+        """ Get a template for the screenplay format. """
+        await interaction.response.send_message(
+            content="""
+            ```
+            NAME
+            Dialogue.
+            ```
+            """, 
+            ephemeral=True)
+
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(GeneralCog(bot))
+    
+    

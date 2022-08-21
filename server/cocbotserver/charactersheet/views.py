@@ -21,12 +21,13 @@ def charactersheetform(request):
 def charactersheet(request, characterid):
     if request.method == 'POST':
         #data = json.load(request)
-        print("bam")
+        
         pass
         
     character = Character.objects.get(pk=characterid)
+    
     #return HttpResponse("You're looking at %s." % obj.investigator_name)
-    return render(request, 'charactersheet.html', {'character': character, 'characterid' : characterid})
+    return render(request, 'charactersheet.html', {'character': character})
 
 def allcharacters(request):
     characters = Character.objects.all()
@@ -113,33 +114,6 @@ def api_get_player_by_discord(request, discord_id):
     return Response(serializer.data)
 
 
-# @api_view(['GET','POST'])
-# def api_message_create(request):
-#     serializer = DiscordMessageSerializer(data=request.data, many=True)
-#     if serializer.is_valid():
-#         serializer.save()
-#     else:
-#         print(serializer.errors)
-    
-#     return Response(serializer.data)
-
-# @api_view(['GET'])
-# def api_message_get(request, discord_id):
-#     message = DiscordMessage.objects.get(discord_id=discord_id)
-#     serializer = DiscordMessageSerializer(instance=message, many=False)
-#     return Response(serializer.data)
-
-# @api_view(['POST'])
-# def api_message_update(request, discord_id):
-#     message = DiscordMessage.objects.get(discord_id=discord_id)
-#     serializer = DiscordMessageSerializer(instance=message, data=request.data)
-#     if serializer.is_valid():
-#         serializer.save()
-#     else:
-#         print(serializer.errors)
-    
-#     return Response(serializer.data)
-
 @api_view(['POST'])
 def api_roll_create(request):
     serializer = RollSerializer(data=request.data, many=True)
@@ -193,28 +167,3 @@ class DiscordMessageView(viewsets.ModelViewSet):
     
     # use the message discord_id to retrieve the message.
     lookup_field = 'discord_id'
-    
-    # def post(self, request, *args, **kwargs):
-    #     print('yes')
-    #     return self.retrieve(request, *args, **kwargs)
-
-    # def create(self, request):
-    #     # do your thing here
-    #     print("test")
-    #     return super().create(request)
-
-# class DiscordMessagePartialUpdateView(GenericAPIView, 
-#                                       mixins.UpdateModelMixin, 
-#                                       mixins.RetrieveModelMixin):
-#     '''
-#     Get or Update the DiscordMessage content using a discord_id.
-#     '''
-#     queryset = DiscordMessage.objects.all()
-#     serializer_class = DiscordMessageSerializer
-#     lookup_field = 'discord_id'
-
-#     def get(self, request, *args, **kwargs):
-#         return self.retrieve(request, *args, **kwargs)
-    
-#     def put(self, request, *args, **kwargs):
-#         return self.partial_update(request, *args, **kwargs)

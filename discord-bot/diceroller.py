@@ -1,15 +1,16 @@
 import re, ast, time, datetime, secrets
 
-from asyncio.base_events import _run_until_complete_cb
-
-from asyncio.runners import run
-
 UNARY_OPS = (ast.UAdd, ast.USub)
 BINARY_OPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod)
 
 class RollResult:
-  def __init__(self, argument=None, equation=None, sumtotal=None, stat=None, comment=None, timestamp=None, user=None, nick=None, channel=None, guild=None, secret=False, omit=False):
-    '''this will eventually be an additional class that holds the results of rolls since there's a possible scenario for multi-rolling'''
+  def __init__(
+    self, argument=None, equation=None, sumtotal=None, stat=None, 
+    comment=None, timestamp=None, user=None, nick=None, channel=None, 
+    guild=None, secret=False, omit=False):
+
+    """Single roll result."""
+    
     self.argument = argument
     self.equation = equation
     self.sumtotal = sumtotal
@@ -27,7 +28,7 @@ class RollResult:
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.timestamp))
     return f"{timestamp} {self.user}/{self.nick}@{self.channel}@{self.guild}: {self.argument} {self.equation} {self.sumtotal} {self.stat} {self.comment} Omit: {self.omit}"
   
-  def get_string(self):
+  def get_string(self) -> str:
     '''return an appropriate string for the content'''
     pretty_string = ""
     if self.stat:
