@@ -9,7 +9,10 @@ MY_GUILD = discord.Object(id=cred.guild)
 APPLICATION_ID = cred.application_id
 TOKEN = cred.token
 API_LINK = "http://localhost:8000/charactersheet/"
-VALID_CHANNELS = [976000529006227456, 967962823797932042]
+VALID_CHANNELS = [#976000529006227456, # bottesting in notart
+                  #967962823797932042, # game channel in notart
+                  740256077215694949 # bottesting on basement
+                  ]
 
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger('discord')
