@@ -1,4 +1,5 @@
 from email.mime import base
+from unicodedata import name
 from django.db import models
 from django.core.validators import RegexValidator
 import math
@@ -72,7 +73,7 @@ class Location(models.Model):
 
 
 stats_equation = RegexValidator(
-            regex=r'^(?:STR|INT|APP|DEX|EDU|SIZ|CON|POW)[/*+-]\d+$',
+            regex=r'^(?:STR|INT|APP|DEX|EDU|SIZ|CON|POW){0,1}[/*+-]{0,1}\d+$',
             message='Must be simple equation with STR|INT|APP|DEX|EDU|SIZ|CON|POW ie DEX/2',
             code='invalid_equation')
 
@@ -88,6 +89,15 @@ class Skill(models.Model):
             return str(f"{self.name}")
         else:
             return str(f"{self.name} ({self.specialization})")
+        
+class SkillSet(models.Model):
+    """Model holding sets of skills for applying to a character."""
+    name            = models.CharField(blank=False,max_length=32,unique=True,help_text="Name of the skill grouping.")
+    description     = models.CharField(blank=True,max_length=100,help_text="Brief explanation of the use of the group.")
+    skills          = models.ManyToManyField(Skill, related_name="skills")
+    
+    def __str__(self):
+        return str(self.name)
 
 
 class Weapon(models.Model):
@@ -107,7 +117,9 @@ class Weapon(models.Model):
 
 class Character(models.Model):
     location_fk         = models.ForeignKey(Location, on_delete=models.CASCADE,blank=True,null=True)
-    player_fk           = models.ForeignKey(Player, on_delete=models.CASCADE,blank=True,null=True)
+    player_fk           = models.OneToOneField(Player, on_delete=models.CASCADE,blank=True,null=True)
+    
+    passcode           = models.CharField(max_length=255, blank=True, default="", help_text="Passcode for your character's safety.")
     
     investigator_name   = models.CharField(verbose_name="Investigator",blank=False,max_length=50,help_text="")
     occupation          = models.CharField(blank=True,max_length=50,help_text="")
@@ -189,12 +201,16 @@ class CharacterSkill(models.Model):
     favorite           = models.BooleanField(default=False,help_text="")
 
     def __str__(self):
-        if self.skill_fk.specialization == "":
-            return str(f"{self.skill_fk.name}")
-        else:
-            return str(f"{self.skill_fk.name} ({self.skill_fk.specialization})")
-
-    def points(self):
+        return ' - '.join(
+            filter(None, [self.skill_fk.name, self.skill_fk.specialization])
+            )
+        
+    def name(self):
+        return ' - '.join(
+            filter(None, [self.skill_fk.name, self.skill_fk.specialization])
+            )
+        
+    def base_points(self):
         base_points = self.skill_fk.base_points
         if "STR" in self.skill_fk.base_points:
             base_points = self.skill_fk.base_points.replace("STR", str(self.character_fk.strength))
@@ -213,9 +229,11 @@ class CharacterSkill(models.Model):
         elif "POW" in self.skill_fk.base_points:
             base_points = self.skill_fk.base_points.replace("POW", str(self.character_fk.power))
             
-        base_points_floor = math.floor(eval(base_points))
-        
-        return int(base_points_floor + self.personal_points + self.occupation_points + self.experience_points)
+        # return a floor value
+        return math.floor(eval(base_points))
+
+    def points(self):
+        return int(self.base_points() + self.personal_points + self.occupation_points + self.experience_points)
 
 class CharacterWeapon(models.Model):
     weapon_fk          = models.ForeignKey(Weapon, on_delete=models.CASCADE,blank=False,null=False)
@@ -223,4 +241,7 @@ class CharacterWeapon(models.Model):
     favorite           = models.BooleanField(default=False,help_text="")
 
     def __str__(self):
+        return str(f"{self.weapon_fk.name}")
+    
+    def name(self):
         return str(f"{self.weapon_fk.name}")
