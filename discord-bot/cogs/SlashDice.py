@@ -5,8 +5,9 @@ import requests, diceroller, mathtools, settings, random, os, asyncio
 from slugify import slugify
 from diceroller import DiceRolls
 import cocapi
+from typing import List
 
-API_LINK = "http://localhost:8000/charactersheet/"
+API_LINK = "http://localhost:8000/api/"
 
 #discord.opus.load_opus('opus')
 
@@ -15,12 +16,76 @@ class MyCog(commands.Cog):
         self.bot = bot
         self.song_queue = []
         self.settings = settings.Settings()
+        
+        
+    async def roll_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+        
+        # get full skills list
+        
+        player = cocapi.get_or_create_player(json={
+                "name": "",
+                "discord_name": interaction.user.name,
+                "discord_id": interaction.user.id })
+        
+        character = requests.get(f"http://localhost:8000/api/character/{player.get('character')}").json()
+        character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
 
-    @app_commands.command()
-    @app_commands.describe(dice='Dice or stat to roll.')
-    async def roll(self, interaction: discord.Interaction, dice: str, comment: str = "", repeat: int = 1, keep: int = 0):
-        """ Basic Dice Rolls """
-        diceresult = diceroller.DiceRolls(dice, repeat=repeat, keep=keep, comment=comment)
+        # blank source
+        options = []
+        
+        if current == "": 
+            if character:
+                favorite_skills = [app_commands.Choice(
+                    name=f"{skill.get('name')}",
+                    value=str(skill.get('points')) )
+                                   for skill in character.get('characterskill_set') 
+                                   if skill.get('favorite')]
+
+                stats = [app_commands.Choice(name=stat_name, value=str(stat_value))
+                         for stat_name, stat_value in character_stats.items()]
+                return favorite_skills + stats
+            # return a list of starred skills and stats
+            else:
+                return options
+        
+        # rolling a stat
+        elif current.isnumeric():
+            options.append(
+                app_commands.Choice(
+                    name=f"{interaction.user.name} will roll a 1D100 against {current}",
+                    value=str(current) 
+                    )
+                )
+            return options[0:24]
+        
+        # elif diceroller is valid diceroller.DiceRolls(current):
+            # return 
+            
+        else:            
+            for skill in character['characterskill_set']:
+                
+                # check if search is present in both skill name and specialization
+                if current.lower() in skill['name'].lower():
+                    options.append( app_commands.Choice(
+                        name=f"{skill['name']} ({skill['points']})",
+                        value=str(skill['points']) 
+                        ))
+            return options[0:24]
+        
+    @app_commands.command(name="roll")
+    @app_commands.autocomplete(roll=roll_autocomplete)
+    @app_commands.describe(
+        roll="What to roll. If you have a character, stats and skills will populate.",
+        description="Describe what you're doing.",
+        repeat="How many times do you want to peform this roll?",
+        keep="How many of the repeating rolls do you want to keep? e.g. -1 is lowest roll, +2 is highest 2 rolls.",
+        opposing="If this is an opposed roll, select the roll you are opposing.")
+    async def roll(self, interaction: discord.Interaction, roll: str, 
+                   description: str = "", repeat: int = 1, keep: int = 0, 
+                   opposing: int = 0):
+        """ Roll dice normally or using your character's stats. """
+        print (roll)
+        diceresult = diceroller.DiceRolls(roll, repeat=repeat, keep=keep, comment=description)
         
         embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult)
         
