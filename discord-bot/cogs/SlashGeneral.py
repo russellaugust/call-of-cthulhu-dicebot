@@ -6,6 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 import mdtools
 import os, uuid, requests, textwrap
+import cocapi
 
 class GeneralCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -48,25 +49,23 @@ class GeneralCog(commands.Cog):
                 content="This only works in threads", 
                 ephemeral=True)
     
-
     @app_commands.command(name="hello")
     async def hello(self, interaction: discord.Interaction) -> None:
         """ Say Hello to the bot """
         await interaction.response.send_message(
             content=f"Hi, {interaction.user.mention}, I'm Barnautomaton 3000. I was pieced back together at Miskatonic University and now my brain is in a jar!")
 
-
     async def skill_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         
         # get full skills list
-        skills = requests.get(f"http://localhost:8000/charactersheet/skills").json()
+        skills = requests.get(f"http://localhost:8000/api/skill").json()
+        
+        skills_to_return = [] # blank results
         
         if current == "": 
-            # return blank list first
-            return []
+            pass
         else:
-            skills_to_return = [] # blank results
-            for skill in skills['skills']:
+            for skill in skills:
                 
                 # check if search is present in both skill name and specialization
                 if current.lower() in skill['name'].lower() + skill['specialization'].lower():
@@ -76,16 +75,17 @@ class GeneralCog(commands.Cog):
                         app_commands.Choice(
                             name=' '.join(filter(None, [name, specialization])),
                             value=str(skill['id']) ) )
-            return skills_to_return[0:24]
+            
+        return skills_to_return[0:24]
 
     @app_commands.command(name="skill")
-    @app_commands.autocomplete(skillid=skill_autocomplete)
+    @app_commands.autocomplete(skill=skill_autocomplete)
     @app_commands.describe(
-        skillid="Skill info.  Only top 25 are visible, type to find more.",
+        skill="Skill info. Only top 25 are visible, type to find more.",
         hide="Hide result from channel? Only you will see this." )
-    async def skill(self, interaction: discord.Interaction, skillid: str, hide: bool = False) -> None:
+    async def skill(self, interaction: discord.Interaction, skill: str, hide: bool = False) -> None:
         """ Skill by id """
-        skill = requests.get(f"http://localhost:8000/charactersheet/skill/{skillid}").json()
+        skill = requests.get(f"http://localhost:8000/api/skill/{skill}").json()
         category = f"" if skill['category'] == "" else f"[{skill['category']}]"
         specialization = f"" if skill['specialization'] == "" else f"[{skill['specialization']}]"
         name_row_list = [skill['name'], category, specialization]
@@ -121,6 +121,41 @@ class GeneralCog(commands.Cog):
         await interaction.response.send_message(
             content=textwrap.dedent(content),
             ephemeral=True)
+    
+    async def attach_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+        
+        # get full skills list
+        characters = requests.get(f"http://localhost:8000/api/character/").json()
+        for_return = []
+        
+        if current == "": 
+            # return list of characters.
+            for character in characters:
+                for_return.append(app_commands.Choice(
+                    name=character['investigator_name'],
+                    value=str(character['id'])))
+        else:
+            for character in characters:
+                
+                # check if search is present in both skill name and specialization
+                if current.lower() in character['investigator_name'].lower():
+                    for_return.append(app_commands.Choice(
+                        name=character['investigator_name'],
+                        value=str(character['id'])))
+            
+        return for_return[0:24]
+
+    @app_commands.command(name="attach")
+    @app_commands.autocomplete(character=attach_autocomplete)
+    @app_commands.describe(
+        character="Which character are you taking control?")
+    async def attach(self, interaction: discord.Interaction, character: str) -> None:
+        """ Attach a character to a player. """
+        new_character = requests.get(f"http://localhost:8000/api/character/{character}").json()
+        attached_character = requests.get(f"http://localhost:8000/character/{character}/attach_player/{interaction.user.id}").json()
+        embed = discord.Embed(title=f"{interaction.user.name} is now {new_character['investigator_name']}!", colour=discord.Colour(0x804423))
+        await interaction.response.send_message(embed=embed)
+    
 
 
 async def setup(bot: commands.Bot) -> None:
