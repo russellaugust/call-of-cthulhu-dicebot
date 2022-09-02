@@ -1,7 +1,7 @@
 import discord
 import requests, datetime
 
-API_LINK = "http://localhost:8000/charactersheet"
+API_LINK = "http://localhost:8000/api"
 
 def __response_valid__(response):
     try:
