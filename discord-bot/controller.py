@@ -8,8 +8,8 @@ import cocapi
 MY_GUILD = discord.Object(id=cred.guild)
 APPLICATION_ID = cred.application_id
 TOKEN = cred.token
-API_LINK = "http://localhost:8000/charactersheet/"
-VALID_CHANNELS = [976000529006227456, 967962823797932042]
+API_LINK = "http://localhost:8000/api/"
+VALID_CHANNELS = cred.channels
 
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger('discord')
@@ -62,8 +62,8 @@ class CoCBot(commands.Bot):
             channel = cocapi.get_or_create_channel(json={
                 "name": message.channel.name,
                 "channel_id": message.channel.id,
-                "parent_id": parent_id })                
-            
+                "parent_id": parent_id })
+
             # save the message to the db
             newmessage = cocapi.create_message(json={
                 "messagetime": message.created_at.isoformat(),

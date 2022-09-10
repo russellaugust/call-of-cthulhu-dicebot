@@ -9,7 +9,7 @@
     </style>
     <head>
         <body>
-            <form id="myForm" action="{% url 'charactersheet:charactersheet' character.id %}" method="POST" enctype="multipart/form-data">
+            <form id="myForm" action="" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <h1>{{ character.investigator_name }}</h1>
                 Player: {{ character.player_fk.name }}<br>
@@ -46,19 +46,11 @@
                     <table>
                         <tr>
                             <th>Name</th>
-                            <th>Base Points</th>
-                            <th>Personal</th>
-                            <th>Occupation</th>
-                            <th>Experience</th>
                             <th>Total</th>
                         </tr>
                         {% for skill in character.characterskill_set.all %}
                         <tr>
                             <td>{{ skill }}</td>
-                            <td>{{ skill.skill_fk.base_points }}</td>
-                            <td>{{ skill.personal_points }}</td>
-                            <td>{{ skill.occupation_points }}</td>
-                            <td>{{ skill.experience_points }}</td>
                             <td><b>{{ skill.points }}</b></td>
                         </tr>
                         {% endfor %}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            padding: 3px;
+            border-collapse: collapse;
+        }
+    </style>
+    <head>
+        <body>
+            <h1>{{ formset.instance.investigator_name }}</h1>
+            <form id="myForm" action="" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Skill</th>
+                            <th>Base</th>
+                            <th>Personal</th>
+                            <th>Occupation</th>
+                            <th>Experience</th>
+                            <th>Total Points</th>
+                            <th>Improve</th>
+                            <th>Favorite</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in formset %}
+                        {{ form.id }}
+                        <tr>
+                            <td>{{ form.skill_fk }}{{ form.skill_fk.errors }}</td>
+                            <td>{{ form.instance.base_points }}</td>
+                            <td>{{ form.personal_points }}{{ form.personal_points.errors }}</td>
+                            <td>{{ form.occupation_points }}{{ form.occupation_points.errors }}</td>
+                            <td>{{ form.experience_points }}{{ form.experience_points.errors }}</td>
+                            <td>{{ form.instance.points }}</td>
+                            <td>{{ form.improve }}{{ form.improve.errors }}</td>
+                            <td>{{ form.favorite }}{{ form.favorite.errors }}</td>
+                            <td>{{ form.DELETE }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                    
+                <p><button value="Submit" type="submit">Submit</button></p>
+            </form>
+        </body>
+    </head>
+</html>

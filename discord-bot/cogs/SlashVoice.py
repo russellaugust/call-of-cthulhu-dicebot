@@ -17,6 +17,7 @@ class VoiceCog(commands.Cog):
 
     @app_commands.command()
     async def announce(self, interaction: discord.Interaction, announce_on: bool):
+        """ Enable or Disable if rolls are spoken in the voice channel."""
         self.settings.announce = announce_on
         await interaction.response.send_message("Announce Rolls in Voice Chat is now set to {}".format(announce_on))
 

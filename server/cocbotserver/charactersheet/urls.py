@@ -1,38 +1,37 @@
-from django.urls import path, include
+from django.urls import path, re_path, include
 from . import views
 from rest_framework import routers
 
 app_name = "charactersheet"
 
+# API routers
 router = routers.DefaultRouter()
 router.register('discordmessage', views.DiscordMessageView)
 router.register('discordchannel', views.DiscordChannelView)
-router.register('player', views.PlayerlView)
+router.register('player', views.PlayerView)
 router.register('roll', views.RollView)
+router.register(r'roll/channel/(?P<channel_id>\d+)/amount/(?P<num_items>\d+)', viewset=views.RollExtendedView)
 router.register('location', views.LocationView)
+router.register('character', views.CharacterView)
+# router.register(r'character/(?P<character_id>\d+)/skill/(?P<skill_id>\d', views.CharacterView)
+router.register('skill', views.SkillView)
+router.register('characterskill', views.CharacterSkillView)
+router.register('skillset', views.SkillSetView)
+# re_path('^test/(?P<username>.+)/$', views.RollView.as_view({'get':'list'})),
 # router.register("DiscordMessagePartial", views.DiscordMessagePartialUpdateView)
 
 urlpatterns = [
     path('character/<int:characterid>', views.charactersheet, name='charactersheet'),
-    path('skill/<int:skillid>', views.get_skill, name='get_skill'),
-    path('skills/', views.get_skills, name='get_skills'),
-    path('character/<int:characterid>/characteristic/<str:characteristic>', views.get_character_characteristic, name='get_character_characteristic'),
-    path('characteristics/', views.get_characteristics, name='get_characteristics'),
-    path('characters/', views.allcharacters, name='allcharacters'),
+    path('character/<int:character_pk>/attach_skills/<int:skillset_pk>', views.attach_skillset, name='attach_skillset'),
+    path('character/<int:character_pk>/attach_player/<int:player_discord_id>', views.attach_player, name='attach_player'),
+    path('player/<int:player_discord_id>/release_character', views.release_character, name='release_character'),
+    
+    path('character/<int:character_pk>/skills/', views.edit_character_skills, name='edit_character_skills'),
     
     # APIs
-    path('player/<int:discord_id>', views.api_get_player_by_discord, name='api_get_player_by_discord'),
+    # path('player/<int:discord_id>', views.api_get_player_by_discord, name='api_get_player_by_discord'),
+    path('character-stats/<int:character_id>', views.api_get_character_stats, name='api_get_character_stats'),
     path('players/', views.api_get_players, name='api_get_players'),
     
-    # path('message/create', views.api_message_create, name='api_message_create'),
-
-    # path('message/create', views.api_message_create, name='api_message_create'),
-    # path('message/create2', views.DiscordMessageCreateView.as_view(), name='api_message_create2'),
-    # path('message/update2/<int:discord_id>', views.DiscordMessagePartialUpdateView.as_view(), name='api_message_update2'),
-    # path('message/update/<int:discord_id>', views.api_message_update, name='api_message_update'),
-    # path('message/<int:discord_id>', views.api_message_get, name='api_message_get'),
-    
-    # path('roll/create', views.api_roll_create, name='api_roll_create'),
-    
-    path('', include(router.urls)),
+    path('api/', include(router.urls)),
 ]

@@ -15,3 +15,4 @@ gif_lucky:
 - https://media.giphy.com/media/xUPGcEDVIQQS6hBbSo/giphy.gif
 voice_subpath: diceroll-voice
 voice_volume: 0.4
+valid_channels: [1,2,3,4]

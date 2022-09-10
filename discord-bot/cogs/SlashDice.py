@@ -1,12 +1,13 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import requests, diceroller, mathtools, settings, random, os, asyncio
+import requests, diceroller, mathtools, settings, random, os, asyncio, json
 from slugify import slugify
 from diceroller import DiceRolls
 import cocapi
+from typing import List
 
-API_LINK = "http://localhost:8000/charactersheet/"
+API_LINK = "http://localhost:8000/api/"
 
 #discord.opus.load_opus('opus')
 
@@ -15,14 +16,104 @@ class MyCog(commands.Cog):
         self.bot = bot
         self.song_queue = []
         self.settings = settings.Settings()
-
-    @app_commands.command()
-    @app_commands.describe(dice='Dice or stat to roll.')
-    async def roll(self, interaction: discord.Interaction, dice: str, comment: str = "", repeat: int = 1, keep: int = 0):
-        """ Basic Dice Rolls """
-        diceresult = diceroller.DiceRolls(dice, repeat=repeat, keep=keep, comment=comment)
         
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult)
+    async def opposingroll_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+        rolls_history = cocapi.get_rolls_history(interaction.channel.id, 8)
+        
+        autofill_rolls = [app_commands.Choice(
+            name=f"{roll.get('player').get('discord_name')} - {roll.get('result')} - {roll.get('comment')}",
+            value=int(roll.get('id')) )
+                          for roll in rolls_history if roll.get('result')]
+        
+        return autofill_rolls[0:24]
+        
+    async def roll_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+        """ skill, stats and favorites list"""
+        
+        player = cocapi.get_or_create_player(json={
+                "name": "",
+                "discord_name": interaction.user.name,
+                "discord_id": interaction.user.id })
+        
+        character = requests.get(f"http://localhost:8000/api/character/{player.get('character')}").json()
+        character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
+
+        # blank source
+        options = []
+        
+        if current == "": 
+            if character:
+                favorite_skills = [app_commands.Choice(
+                    name=f"{skill.get('name')} ({skill.get('points')})",
+                    value=json.dumps( {"type"  : f"{skill.get('name')}",
+                                       "value" : f"{skill.get('points')}"} ))
+                                   for skill in character.get('characterskill_set') 
+                                   if skill.get('favorite')]
+                stats = [app_commands.Choice(
+                    name=f"{stat_name} ({stat_value})", 
+                    value=json.dumps( {"type"   : f"{stat_name}",
+                                       "value"  : f"{stat_value}"} ))
+                         for stat_name, stat_value in character_stats.items()]
+                return favorite_skills + stats
+            # return a list of starred skills and stats
+            else:
+                return options
+
+        elif current == "stats" or current == "characteristics": 
+            if character:
+                return [app_commands.Choice(
+                    name=f"{stat_name} ({stat_value})", 
+                    value=json.dumps( {"type"   : f"{stat_name}",
+                                       "value"  : f"{stat_value}"} ))
+                        for stat_name, stat_value in character_stats.items()]
+            # return a list of starred skills and stats
+            else:
+                return options[0:24]
+            
+        # rolling a stat
+        elif current.isnumeric():
+            options.append(
+                app_commands.Choice(
+                    name=f"Will roll a 1D100 against {current}",
+                    value=json.dumps( {"type"   : f"rolling...",
+                                       "value"  : f"{current}"} )))
+            return options[0:24]
+        
+        # elif diceroller is valid diceroller.DiceRolls(current):
+            # return 
+            
+        else:
+            if character:
+                for skill in character.get('characterskill_set', []):
+                    # check if search is present in both skill name and specialization
+                    if current.lower() in skill['name'].lower():
+                        options.append( app_commands.Choice(
+                            name=f"{skill.get('name')} ({skill.get('points')})",
+                            value=json.dumps( {"type"   : f"{skill.get('name')}",
+                                               "value"  : f"{skill.get('points')}"} )))
+                return options[0:24]
+            else:
+                return options[0:24]
+        
+    @app_commands.command(name="roll")
+    @app_commands.autocomplete(roll=roll_autocomplete, opposing=opposingroll_autocomplete)
+    @app_commands.describe(
+        roll="What to roll. If you have a character, stats and skills will populate.",
+        description="Describe what you're doing.",
+        repeat="How many times do you want to peform this roll?",
+        keep="How many of the repeating rolls do you want to keep? e.g. -1 is lowest roll, +2 is highest 2 rolls.",
+        opposing="If this is an opposed roll, select the roll you are opposing.",
+        hidden="Enable to roll just for yourself.")
+    async def roll(self, interaction: discord.Interaction, roll: str, 
+                   description: str = "", repeat: int = 1, keep: int = 0, 
+                   opposing: int = -1, hidden: bool = False):
+        """ Roll dice or using your character's stats and skills. """
+
+        # awful hack to get the roller to work right. 
+        roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
+        diceresult = diceroller.DiceRolls(roll.get('value'), repeat=repeat, keep=keep, comment=description)
+        
+        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, rolltype=roll.get('type'))
         
         # embed a GIF or image when needed
         embed = self.__successlevel_image__(embed, diceresult.getroll())
@@ -35,16 +126,38 @@ class MyCog(commands.Cog):
         
         # dramatic pause for fumbles and criticals  
         await asyncio.sleep(4) if diceresult.getroll().get_success() == "fumble" or diceresult.getroll().get_success() == "critical" else None
-
+        
+        # TODO: make opposing rolls look nicer.
+        if opposing > -1:
+            opposing_roll = cocapi.get_roll(id=opposing)
+            embed.add_field(name=f"Roll 1: {opposing_roll.get('comment')}", value=f"{opposing_roll.get('success')}", inline=True)
+            embed.add_field(name=f"Roll 2 {interaction.user.name}", value=f"{diceresult.getroll().get_success()}", inline=True)
+        
         # send response
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+        await interaction.response.send_message(embed=embed, ephemeral=hidden)
 
     @app_commands.command(name="roll_advantage")
-    @app_commands.describe(dice='Dice or stat to roll.')
-    async def roll_advantage(self, interaction: discord.Interaction, dice: str, comment: str = ""):
-        """ Roll Dice with Advantage / Bonus """
-        diceresult = diceroller.DiceRolls(dice, repeat=2, keep=-1)
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *with advantage*")
+    @app_commands.autocomplete(roll=roll_autocomplete)
+    @app_commands.describe(
+        roll="What to roll. If you have a character, stats and skills will populate.",
+        description="Describe what you're doing.",
+        repeat="How many times do you want to peform this roll?",
+        keep="How many of the repeating rolls do you want to keep? e.g. -1 is lowest roll, +2 is highest 2 rolls.",
+        opposing="If this is an opposed roll, select the roll you are opposing.")
+    async def roll_advantage(self, interaction: discord.Interaction, roll: str, 
+                   description: str = "", repeat: int = 1, keep: int = 0, 
+                   opposing: int = 0):
+        """ Roll with Advantage / Bonus """
+        
+        # awful hack to get the roller to work right. 
+        roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
+        diceresult = diceroller.DiceRolls(roll.get('value'), repeat=repeat, keep=keep, comment=description)
+        
+        diceresult = diceroller.DiceRolls(roll, repeat=2, keep=-1)
+        
+        embed = self.__roll_with_format__(interaction=interaction, 
+                                          rolls=diceresult, 
+                                          additional_comment=f" - *with advantage*")
         
         not_omitted = diceresult.not_omitted_rolls()[0]
         embed = self.__successlevel_image__(embed, not_omitted)
@@ -55,11 +168,25 @@ class MyCog(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=False)
 
+
     @app_commands.command(name="roll_disadvantage")
-    @app_commands.describe(dice='Dice or stat to roll.')
-    async def roll_disadvantage(self, interaction: discord.Interaction, dice: str, comment: str = ""):
-        """ Roll Dice with Disadvantage / Penalty """
-        diceresult = diceroller.DiceRolls(dice, repeat=2, keep=1)
+    @app_commands.autocomplete(roll=roll_autocomplete)
+    @app_commands.describe(
+        roll="What to roll. If you have a character, stats and skills will populate.",
+        description="Describe what you're doing.",
+        repeat="How many times do you want to peform this roll?",
+        keep="How many of the repeating rolls do you want to keep? e.g. -1 is lowest roll, +2 is highest 2 rolls.",
+        opposing="If this is an opposed roll, select the roll you are opposing.")
+    async def roll_disadvantage(self, interaction: discord.Interaction, roll: str, 
+                   description: str = "", repeat: int = 1, keep: int = 0, 
+                   opposing: int = 0):
+        """ Roll with Disadvantage / Penalty """
+        
+        # awful hack to get the roller to work right. 
+        roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
+        diceresult = diceroller.DiceRolls(roll.get('value'), repeat=repeat, keep=keep, comment=description)
+        
+        diceresult = diceroller.DiceRolls(roll, repeat=2, keep=1)
         embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *with disadvantage*")
 
         not_omitted = diceresult.not_omitted_rolls()[0]
@@ -75,20 +202,24 @@ class MyCog(commands.Cog):
     @app_commands.describe(stat='Entered number will be the resulting die roll, testing only.')
     async def roll_test(self, interaction: discord.Interaction, stat: int, comment: str = ""):
         """ Command for testing roll results only. """
-        diceresult = diceroller.DiceRolls(str(stat), repeat=2, keep=-1)
-        diceresult.override_sumtotal(stat)
-        embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *TEST ONLY*")
-        
-        not_omitted = diceresult.not_omitted_rolls()[0]
-        embed = self.__successlevel_image__(embed, not_omitted)
-        self.__announce_roll__(interaction, not_omitted)
+        if interaction.user.top_role.permissions.administrator:  
+            diceresult = diceroller.DiceRolls(str(stat), repeat=2, keep=-1)
+            diceresult.override_sumtotal(stat)
+            embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *TEST ONLY*")
+            
+            not_omitted = diceresult.not_omitted_rolls()[0]
+            embed = self.__successlevel_image__(embed, not_omitted)
+            self.__announce_roll__(interaction, not_omitted)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        else:
+            await interaction.response.send_message(content="Sorry, but you are not an admin.", ephemeral=True)
 
     @app_commands.command(name="roll_improvements")
     @app_commands.describe(stats='Stats to Improve, can be one or more and must be separated by a space.')
     async def roll_improvements(self, interaction: discord.Interaction, stats: str):
-        """ Roll Improvements """
+        """ Roll Improvements (no character sheet implemntation yet) """
 
         description = ""
         stats = stats.split(" ")
@@ -112,63 +243,7 @@ class MyCog(commands.Cog):
         await interaction.response.send_message(embed=embed)
     
     
-    # # TODO this is wrong, using old copy of def, revise to use a skil list for the PLAYER'S CHARACTER
-    # async def character_skill_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
-    #     skills = requests.get(f"http://localhost:8000/charactersheet/skills").json()
-        
-    #     # TODO This should list the favorites first! Good place for this.
-    #     if current == "": 
-    #         return []
-    #     else:
-    #         skills_to_return = [] # blank results
-    #         for skill in skills['skills']:
-    #             if current.lower() in skill['name'].lower():
-    #                 name = skill['name']
-    #                 specialization = f"" if skill['specialization'] == "" else f"[{skill['specialization']}]"
-    #                 skills_to_return.append(
-    #                     app_commands.Choice(
-    #                         name=' '.join(filter(None, [name, specialization])),
-    #                         value=str(skill['id']) ) )
-    #         return skills_to_return[0:24]
-
-    # @app_commands.command(name="my_roll")
-    # @app_commands.autocomplete(skillid=character_skill_autocomplete)
-    # @app_commands.describe(
-    #     skill='Roll for players with character sheets.')
-    # async def my_roll(self, interaction: discord.Interaction, skillid: str, comment: str = "", repeat: int = 1, keep: int = 0) -> None:
-    #     """ Roll for players with character sheets"""
-    #     skill = requests.get(f"http://localhost:8000/charactersheet/skill/{skillid}").json()
-    #     category = f"" if skill['category'] == "" else f"[{skill['category']}]"
-    #     specialization = f"" if skill['specialization'] == "" else f"[{skill['specialization']}]"
-    #     name_row_list = [skill['name'], category, specialization]
-    #     name_row = ' '.join(filter(None, name_row_list))
-        
-    #     embed = discord.Embed(title=f"{name_row} | {skill['base_points']}%", colour=discord.Colour(0x804423), description=skill['description'])
-
-    #     await interaction.response.send_message(
-    #         embed=embed,
-    #         ephemeral=False)
-
-    
-    # async def my_roll(self, interaction: discord.Interaction, dice: str, comment: str = "", repeat: int = 1, keep: int = 0):
-    #     """ Basic Dice Rolls """
-    #     diceresult = diceroller.DiceRolls(dice, repeat=repeat, keep=keep)
-        
-    #     embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=comment)
-        
-    #     # embed a GIF or image when needed
-    #     embed = self.__successlevel_image__(embed, diceresult.getroll())
-            
-    #     # read the results if announce is on and the bot is in a channel
-    #     self.__announce_roll__(interaction, diceresult.getroll())
-        
-    #     # dramatic pause for fumbles and criticals  
-    #     await asyncio.sleep(4) if diceresult.getroll().get_success() == "fumble" or diceresult.getroll().get_success() == "critical" else None
-
-    #     # send response
-    #     await interaction.response.send_message(embed=embed, ephemeral=False)
-
-    def __roll_with_format__(self, interaction, rolls, additional_comment=""):
+    def __roll_with_format__(self, interaction, rolls, rolltype="", additional_comment=""):
 
         # FAIL: the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
         if rolls.getroll().error():
@@ -192,6 +267,8 @@ class MyCog(commands.Cog):
             color = color if roll.is_omitted() else roll.get_success_color()
 
         comment = rolls.getroll().get_comment() if rolls.getroll().get_comment() else ""
+            
+        comment = rolltype if comment == "" else comment
         embed = discord.Embed(title=f"{comment}{additional_comment}", colour=discord.Colour(color), description=description)
 
         #author_avatar_url = interaction.user.avatar.url or interaction.user.display_avatar.url
