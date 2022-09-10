@@ -106,7 +106,7 @@ class MyCog(commands.Cog):
         hidden="Enable to roll just for yourself.")
     async def roll(self, interaction: discord.Interaction, roll: str, 
                    description: str = "", repeat: int = 1, keep: int = 0, 
-                   opposing: int = -1, hidden=False):
+                   opposing: int = -1, hidden: bool = False):
         """ Roll dice or using your character's stats and skills. """
 
         # awful hack to get the roller to work right. 
