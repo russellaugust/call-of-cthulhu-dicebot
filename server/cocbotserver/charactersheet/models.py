@@ -13,7 +13,7 @@ class Player(models.Model):
     discord_id   = models.IntegerField(unique=True,blank=False,null=False,help_text="")
 
     def __str__(self):
-        return str(f"{self.discord_name} | {self.name}")
+        return str(f"{self.discord_name} aka {self.name}")
     
     
 class DiscordChannel(models.Model):
@@ -52,7 +52,7 @@ class Roll(models.Model):
 
     def __str__(self):
         return " | ".join(filter(None, 
-                                 [self.player.discord_name,
+                                 [str(self.player),
                                  f"{self.messagetime:%Y-%m-%d %H:%M:%S}", 
                                  self.argument, 
                                  self.success]))
@@ -151,6 +151,7 @@ class Character(models.Model):
         return int((self.size+self.constitution)/10)
 
     def san_max(self):
+        # TODO needs to be a calculation off of the mythos skill
         return int(99)
 
     def move(self):
@@ -194,6 +195,7 @@ class Character(models.Model):
 class CharacterSkill(models.Model):
     skill_fk           = models.ForeignKey(Skill, on_delete=models.CASCADE,blank=False,null=False)
     character_fk       = models.ForeignKey(Character, on_delete=models.CASCADE,blank=False,null=False)
+    name_override      = models.CharField(null=True,blank=True,max_length=32,help_text="Overrides the original skill name for just this character. Useful for things like Arts and Crafts or Language.")
     personal_points    = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from Personal pool.")
     occupation_points  = models.IntegerField(default=0,blank=False,null=False,help_text="Points distributed from chosen Occupation pool.")
     experience_points  = models.IntegerField(default=0,blank=False,null=False,help_text="All points beyond Base, Personal and Occupation.")
@@ -201,15 +203,16 @@ class CharacterSkill(models.Model):
     favorite           = models.BooleanField(default=False,help_text="")
 
     def __str__(self):
-        return ' - '.join(
-            filter(None, [self.skill_fk.name, self.skill_fk.specialization])
-            )
+        return self.name()
         
     def name(self):
-        return ' - '.join(
-            filter(None, [self.skill_fk.name, self.skill_fk.specialization])
-            )
-        
+        if self.name_override:
+            return self.name_override
+        else:
+            return ' - '.join(
+                filter(None, [self.skill_fk.name, self.skill_fk.specialization])
+                )
+            
     def base_points(self):
         base_points = self.skill_fk.base_points
         if "STR" in self.skill_fk.base_points:

@@ -1,6 +1,7 @@
 import discord
 import requests, datetime
 
+BASE_LINK = "http://localhost:8000"
 API_LINK = "http://localhost:8000/api"
 
 def __response_valid__(response):
@@ -28,13 +29,28 @@ def get_or_create_channel(json: dict) -> dict:
     else:
         response = requests.post(url=f"{API_LINK}/discordchannel/", json=json)
         return response.json()
+    
+# CHARACTERS
+def create_character(json: dict) -> dict:
+    response = requests.post(url=f"{API_LINK}/character/", json=json)
+    return response.json()
 
+def attach_skillset_to_character(character_id: int, skillset_id: int) -> None:
+    requests.get(url=f"{BASE_LINK}/character/{character_id}/attach_skills/{skillset_id}")
+    
+def character(id) -> dict:
+    response = requests.get(url=f"{API_LINK}/character/{id}")
+    return response.json()
+
+# MESSAGES
 def get_message(discord_id: int) -> dict:
     response = requests.get(url=f"{API_LINK}/discordmessage/{discord_id}")
     return response.json()
 
 def create_message(json: dict) -> dict:
+    print (json)
     response = requests.post(url=f"{API_LINK}/discordmessage/",json=json)
+    print(response.content)
     return response.json()
 
 def message_content_update(discord_id, content) -> dict:
@@ -42,39 +58,44 @@ def message_content_update(discord_id, content) -> dict:
                               json={'content' : content})
     return response.json()
 
-def message_delete(discord_id):
+def message_delete(discord_id) -> None:
     response = requests.delete(url=f"{API_LINK}/discordmessage/{discord_id}/")
 
+# ROLLS
 def create_roll(json: dict) -> dict:
     response = requests.post(url=f"{API_LINK}/roll/",json=json)
     return response.json()
 
+def get_roll(id) -> dict:
+    response = requests.get(url=f"{API_LINK}/roll/{id}")
+    return response.json()
 
-# player = get_or_create_player(json={
-#     "name": "",
-#     "discord_name": "test name",
-#     "discord_id": 2342342323 })
+def get_rolls_history(channel_id, amount) -> dict:
+    response = requests.get(url=f"{API_LINK}/roll/channel/{channel_id}/amount/{amount}")
+    return response.json()
 
-# print(player)
+# SKILLS
+def get_skillsets() -> dict:
+    """ Get list of skillsets, a group of skills, to attach to character sheets. """
+    response = requests.get(url=f"{API_LINK}/skillset/")
+    return response.json()
 
-# channel = get_or_create_channel(json={
-#     "name": "Testing Channel2",
-#     "channel_id": 1234,
-#     "parent_id": 7839 })
+def change_charskill(id, json) -> dict:
+    """ change specific character skill fields with json patch. """
+    response = requests.patch(url=f"{API_LINK}/characterskill/{id}/", json=json)
+    return response.json()
 
-# print(channel)
+def add_charskill(json) -> dict:
+    """ Add a character skill to the character sheet. """
+    response = requests.post(url=f"{API_LINK}/characterskill/", json=json)
+    return response
 
-# message = create_message(json={
-#     "messagetime": "2022-08-16T19:34:00Z",
-#     "discord_id": 12345221,
-#     "content": "TEST!",
-#     "reply_msg_id": 9876,
-#     "player": player.get('id'),
-#     "discordchannel": channel.get('id') })
+def delete_charskill(id) -> dict:
+    """ Delete a character's skill. """
+    response = requests.delete(url=f"{API_LINK}/characterskill/{id}")
+    return response
 
-# print(message)
-
-# message = message_content_update(discord_id=12345221, content="UPDATE!")
-# print(message)
-
-message_delete(1008880879508140092)
+def change_stat(id, json) -> dict:
+    """ change specific fields with json patch """
+    response = requests.patch(url=f"{API_LINK}/character/{id}/", json=json)
+    return response

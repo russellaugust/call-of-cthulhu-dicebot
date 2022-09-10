@@ -65,8 +65,8 @@ class CoCBot(commands.Bot):
             channel = cocapi.get_or_create_channel(json={
                 "name": message.channel.name,
                 "channel_id": message.channel.id,
-                "parent_id": parent_id })                
-            
+                "parent_id": parent_id })
+
             # save the message to the db
             newmessage = cocapi.create_message(json={
                 "messagetime": message.created_at.isoformat(),

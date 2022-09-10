@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from .models import Character, CharacterSkill, DiscordChannel, Location, Player, Skill, DiscordMessage, Roll, SkillSet
 from .forms import CharacterForm, CharacterSkillsForm
 from django.shortcuts import render
-from .serializers import CharacterSerializer, CharacterStatsSerializer, DiscordMessageSerializer, LocationSerializer, PlayerSerializer, RollSerializer, DiscordChannelSerializer, SkillSerializer
+from .serializers import CharacterSerializer, CharacterSkillSerializer, CharacterStatsSerializer, DiscordMessageSerializer, LocationSerializer, PlayerSerializer, RollExtendedSerializer, RollSerializer, DiscordChannelSerializer, SkillSerializer, SkillSetSerializer
 from rest_framework.generics import GenericAPIView, CreateAPIView
 from rest_framework.views import APIView
 from rest_framework import mixins
@@ -15,15 +15,30 @@ from django.forms import inlineformset_factory
 
 # Create your views here.
 
-
 def attach_player(request, character_pk, player_discord_id):
+    """ Attach a character to a player."""
     character = Character.objects.get(pk=character_pk)
     player = Player.objects.get(discord_id=player_discord_id)
-    character.player_fk = player
-    character.save()
-    return JsonResponse({"Attached":True})
-    
+    print (hasattr(player, 'character'))
+    print (character.player_fk)
+    if not hasattr(player, 'character') and character.player_fk is None:
+        character.player_fk = player
+        character.save()
+        return JsonResponse({"success":True})
+    else:
+        return JsonResponse({"success":False})
 
+def release_character(request,  player_discord_id):
+    """ Release a character from a player."""
+    player = Player.objects.get(discord_id=player_discord_id)
+    if hasattr(player, 'character'):
+        character = player.character
+        character.player_fk = None
+        character.save()
+        return JsonResponse({"success":True})
+    else:
+        return JsonResponse({"success":False})
+    
 def attach_skillset(request, character_pk, skillset_pk):
     # if request.method == 'POST':
     
@@ -38,9 +53,10 @@ def attach_skillset(request, character_pk, skillset_pk):
     skills_to_add = [skill for skill in skillset if skill.id not in char_skills_idlist]
     
     for skill in skills_to_add:
-        skill = CharacterSkill(skill_fk=skill, character_fk=character
-                               )
+        skill = CharacterSkill(skill_fk=skill, character_fk=character)
         skill.save()
+    
+    return JsonResponse({"success":True})
         
 def edit_character_skills(request, character_pk):
     CharacterSkillFormSet = inlineformset_factory(
@@ -180,6 +196,22 @@ class DiscordChannelView(viewsets.ModelViewSet):
     serializer_class = DiscordChannelSerializer
     
     lookup_field = 'channel_id'
+    
+class RollExtendedView(viewsets.ModelViewSet):
+    '''
+    Access to the API for Roll.
+    '''
+    queryset = Roll.objects.all()
+    serializer_class = RollExtendedSerializer
+    
+    def get_queryset(self):
+        # print ()
+        channel_id = int(self.kwargs['channel_id'])
+        num_items = int(self.kwargs['num_items'])
+        channel = DiscordChannel.objects.get(channel_id=channel_id)
+        queryset = Roll.objects.filter(omit=False, discordchannel=channel).order_by('-messagetime')[:num_items]
+        # queryset = Roll.objects.filter(omit=False).order_by('-messagetime')
+        return queryset
 
 class RollView(viewsets.ModelViewSet):
     '''
@@ -187,7 +219,6 @@ class RollView(viewsets.ModelViewSet):
     '''
     queryset = Roll.objects.all()
     serializer_class = RollSerializer
-
 
 class DiscordMessageView(viewsets.ModelViewSet):
     '''
@@ -201,7 +232,21 @@ class DiscordMessageView(viewsets.ModelViewSet):
     
 class SkillView(viewsets.ModelViewSet):
     '''
-    Interact with DiscordMessage, discord_id for retrieval.
+    Interact with Skill.
     '''
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
+    
+class SkillSetView(viewsets.ModelViewSet):
+    '''
+    Interact with SkillSet.
+    '''
+    queryset = SkillSet.objects.all()
+    serializer_class = SkillSetSerializer
+    
+class CharacterSkillView(viewsets.ModelViewSet):
+    '''
+    Interact with a character's skill.
+    '''
+    queryset = CharacterSkill.objects.all()
+    serializer_class = CharacterSkillSerializer
