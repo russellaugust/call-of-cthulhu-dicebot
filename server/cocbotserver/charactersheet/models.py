@@ -17,7 +17,7 @@ class Player(models.Model):
     
     
 class DiscordChannel(models.Model):
-    name       = models.CharField(blank=False,max_length=32,help_text="")
+    name       = models.CharField(blank=False,max_length=100,help_text="")
     channel_id = models.IntegerField(unique=True,blank=False,null=False,help_text="")
     parent_id  = models.IntegerField(blank=True,null=True,help_text="")
     
