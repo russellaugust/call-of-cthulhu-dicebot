@@ -400,7 +400,8 @@ class GeneralCog(commands.Cog):
                 colour=discord.Colour(0x804423))
             
             # split the skills list into 3 columns
-            skill_columns = list(split(character.get('characterskill_set'), 3))
+            newlist = sorted(character.get('characterskill_set'), key=lambda d: d['name']) 
+            skill_columns = list(split(newlist, 3))
             
             for column in skill_columns:
                 skills_list = ""
