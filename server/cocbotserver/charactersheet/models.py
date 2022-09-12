@@ -121,11 +121,12 @@ class Character(models.Model):
     
     passcode           = models.CharField(max_length=255, blank=True, default="", help_text="Passcode for your character's safety.")
     
-    investigator_name   = models.CharField(verbose_name="Investigator",blank=False,max_length=50,help_text="")
-    occupation          = models.CharField(blank=True,max_length=50,help_text="")
-    birthplace          = models.CharField(blank=True,max_length=50,help_text="")
-    sex                 = models.CharField(blank=True,max_length=10,help_text="")
-    age                 = models.IntegerField(blank=True,null=True,help_text="")
+    investigator_name       = models.CharField(verbose_name="Investigator Name",blank=False,max_length=50,help_text="")
+    investigator_alias      = models.CharField(verbose_name="Investigator Alias",blank=True,default="",max_length=25,help_text="")
+    occupation              = models.CharField(blank=True,max_length=50,help_text="")
+    birthplace              = models.CharField(blank=True,max_length=50,help_text="")
+    sex                     = models.CharField(blank=True,max_length=10,help_text="")
+    age                     = models.IntegerField(blank=True,null=True,help_text="")
 
     strength        = models.IntegerField(verbose_name="STR",blank=True,null=True,help_text="")
     intelligence    = models.IntegerField(verbose_name="INT",blank=True,null=True,help_text="")
@@ -137,15 +138,21 @@ class Character(models.Model):
     power           = models.IntegerField(verbose_name="POW",blank=True,null=True,help_text="")
     luck            = models.IntegerField(blank=True,null=True,help_text="")
 
-    hp              = models.IntegerField(blank=True,null=True,help_text="")
-    magic           = models.IntegerField(blank=True,null=True,help_text="")
-    san             = models.IntegerField(blank=True,null=True,help_text="")
-    san_daystart    = models.IntegerField(blank=True,null=True,help_text="")
+    hp              = models.IntegerField(verbose_name="HP",blank=True,null=True,help_text="")
+    magic           = models.IntegerField(verbose_name="Magic",blank=True,null=True,help_text="")
+    san             = models.IntegerField(verbose_name="SAN",blank=True,null=True,help_text="")
+    san_daystart    = models.IntegerField(verbose_name="START",blank=True,null=True,help_text="")
 
     temporary_insanity  = models.BooleanField(default=False,help_text="")
     indefinite_insanity = models.BooleanField(default=False,help_text="")
     dying_unconcious    = models.BooleanField(default=False,help_text="")
     dying_majorwound    = models.BooleanField(default=False,help_text="")
+    
+    def alias(self):
+        if self.investigator_alias:
+            return self.investigator_alias
+        else:
+            return self.investigator_name
 
     def hp_max(self):
         return int((self.size+self.constitution)/10)
