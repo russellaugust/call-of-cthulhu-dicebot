@@ -40,13 +40,13 @@ class CharacterWeaponSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class CharacterSkillSerializer(serializers.ModelSerializer):
-
     name = serializers.ReadOnlyField()
-    
     class Meta:
         model = CharacterSkill
         # fields = ('name', 'points', 'id', 'improve', 'favorite')
-        fields = ('skill_fk', 'character_fk', 'name', 'name_override', 'personal_points', 'occupation_points', 'experience_points', 'points', 'id', 'improve', 'favorite')
+        fields = ('name', 'name_override', 'id', 'skill_fk', 'character_fk', 
+                  'personal_points', 'occupation_points', 'experience_points', 
+                  'points', 'improve', 'favorite')
 
 class CharacterSerializer(serializers.ModelSerializer):
     # player_fk = PlayerSerializer(read_only=True)
@@ -64,10 +64,10 @@ class CharacterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Character
-        # fields = ('id', 'investigator_name', 'characterskill_set')
         fields = "__all__"
         
-class CharacterStatsSerializer(serializers.ModelSerializer):    
+class CharacterStatsSerializer(serializers.ModelSerializer):
+    """ use only to return the stats list """  
     class Meta:
         model = Character
         fields = ('strength','intelligence','appearance','dexterity',
