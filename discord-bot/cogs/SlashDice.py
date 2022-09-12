@@ -35,14 +35,16 @@ class MyCog(commands.Cog):
                 "discord_name": interaction.user.name,
                 "discord_id": interaction.user.id })
         
+        
         character = requests.get(f"http://localhost:8000/api/character/{player.get('character')}").json()
-        character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
 
         # blank source
         options = []
         
         if current == "": 
-            if character:
+            if player.get('character'):
+                character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
+                
                 favorite_skills = [app_commands.Choice(
                     name=f"{skill.get('name')} ({skill.get('points')})",
                     value=json.dumps( {"type"  : f"{skill.get('name')}",
@@ -60,7 +62,9 @@ class MyCog(commands.Cog):
                 return options
 
         elif current == "stats" or current == "characteristics": 
-            if character:
+            if player.get('character'):
+                character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
+                
                 return [app_commands.Choice(
                     name=f"{stat_name} ({stat_value})", 
                     value=json.dumps( {"type"   : f"{stat_name}",
@@ -83,7 +87,7 @@ class MyCog(commands.Cog):
             # return 
             
         else:
-            if character:
+            if player.get('character'):
                 for skill in character.get('characterskill_set', []):
                     # check if search is present in both skill name and specialization
                     if current.lower() in skill['name'].lower():
@@ -243,8 +247,8 @@ class MyCog(commands.Cog):
         await interaction.response.send_message(embed=embed)
     
     
-    def __roll_with_format__(self, interaction, rolls, rolltype="", additional_comment=""):
-
+    def __roll_with_format__(self, interaction, rolls, rolltype="", additional_comment="") -> discord.Embed:
+        
         # FAIL: the sum of the rolls is NONE, which indicates there was a problem in the syntax or code.  Produces error.
         if rolls.getroll().error():
             embed = discord.Embed(colour=discord.Colour(0xbf1919), 
@@ -270,11 +274,20 @@ class MyCog(commands.Cog):
             
         comment = rolltype if comment == "" else comment
         embed = discord.Embed(title=f"{comment}{additional_comment}", colour=discord.Colour(color), description=description)
-
-        #author_avatar_url = interaction.user.avatar.url or interaction.user.display_avatar.url
-        #embed.set_author(name=interaction.user.display_name, icon_url=author_avatar_url)
-        #embed.set_author(name=f"{ctx.author.display_name} - {comment}{additional_comment}", icon_url=author_avatar_url)
-
+        
+        # TODO gotta get the roller names on the roll
+        player = cocapi.get_or_create_player(json={
+                "name": "",
+                "discord_name": interaction.user.name,
+                "discord_id": interaction.user.id })
+        
+        author_avatar_url = interaction.user.avatar.url or interaction.user.display_avatar.url
+        
+        if player.get('character'):
+            character = cocapi.character(player.get('character'))    
+            embed.set_author(name=f"{character.get('alias')} ({interaction.user.display_name})", icon_url=author_avatar_url)
+        else:
+            embed.set_author(name=interaction.user.display_name, icon_url=author_avatar_url)
         return embed
     
     def __add_to_db__(self, interaction: discord.Interaction, rolls: DiceRolls):
@@ -313,7 +326,7 @@ class MyCog(commands.Cog):
         for roll in all_rolls:
             cocapi.create_roll(json=roll)
 
-    def __successlevel_image__(self, embed, roll):
+    def __successlevel_image__(self, embed, roll) -> discord.Embed:
         # returns a discord.embed image with a gif that matches the roll success
         
         #raise ValueError('not class RollResult.') if roll is not diceroller.RollResult else None

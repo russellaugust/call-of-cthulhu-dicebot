@@ -53,6 +53,7 @@ class CharacterSerializer(serializers.ModelSerializer):
     # location_fk = LocationSerializer(read_only=True)
     characterskill_set = CharacterSkillSerializer(read_only=True, many=True)
     characterweapon_set = CharacterWeaponSerializer(read_only=True, many=True)
+    alias = serializers.ReadOnlyField()
     
     hp_max = serializers.ReadOnlyField()
     san_max = serializers.ReadOnlyField()

@@ -98,7 +98,7 @@ class GeneralCog(commands.Cog):
             "discord_name": interaction.user.name,
             "discord_id": interaction.user.id })
         
-        character = requests.get(f"http://localhost:8000/api/character/{player.get('character')}").json()
+        character = cocapi.character(player.get('character'))
         
         if character:
                 
@@ -122,7 +122,7 @@ class GeneralCog(commands.Cog):
             "discord_name": interaction.user.name,
             "discord_id": interaction.user.id })
 
-        character = requests.get(f"http://localhost:8000/api/character/{player.get('character')}").json()
+        character = cocapi.character(player.get('character'))
         
         if character:
                         
@@ -219,6 +219,7 @@ class GeneralCog(commands.Cog):
     async def character_create(self, 
                                interaction: discord.Interaction, 
                                investigator_name: str,
+                               alias: str,
                                occupation: str,
                                birthplace: str,
                                sex: str,
@@ -251,6 +252,7 @@ class GeneralCog(commands.Cog):
         character = cocapi.create_character(json={
             "passcode": "",
             "investigator_name": investigator_name,
+            "investigator_alias": alias,
             "occupation": occupation,
             "birthplace": birthplace,
             "sex": sex,
@@ -298,9 +300,24 @@ class GeneralCog(commands.Cog):
             "discord_name": interaction.user.name,
             "discord_id": interaction.user.id })
         
-        new_character = requests.get(f"http://localhost:8000/api/character/{character}").json()
-        success = requests.get(f"http://localhost:8000/character/{character}/attach_player/{interaction.user.id}").json()
-        embed = discord.Embed(title=f"{interaction.user.name} is now {new_character['investigator_name']}: {success.get('success')}", colour=discord.Colour(0x804423))
+        # set default embed
+        embed = discord.Embed(title=f"Character is already in use.", description=f"", colour=discord.Colour(0x804423))
+        
+        # get the chosen character
+        character_json = cocapi.character(character)
+        
+        # does the chosen character have a player?
+        if character_json.get('player_fk'):
+            embed.title = f"Character is already in use."
+        else:
+            # does the player choosing have a character already?
+            if player.get('character'):
+                requests.get(f"http://localhost:8000/player/{interaction.user.id}/release_character").json()
+                
+            requests.get(f"http://localhost:8000/character/{character}/attach_player/{interaction.user.id}").json()
+            new_character = cocapi.character(character)
+            embed.title = f"You are now {new_character.get('investigator_name')}"
+                
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="character_release")
@@ -312,6 +329,34 @@ class GeneralCog(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
         
+
+    @app_commands.command(name="character_change_name")
+    @app_commands.describe(name="Character's full name", 
+                           alias="Character's shorthand name (as it appears in the script).")
+    async def character_change_name(self, interaction: discord.Interaction, name: str = "", alias: str = "") -> None:
+        """ Edit your name and alias. """
+        player = cocapi.get_or_create_player(json={
+            "name": "",
+            "discord_name": interaction.user.name,
+            "discord_id": interaction.user.id })        
+        
+        if player.get('character'):
+            character = cocapi.character(player.get('character'))
+
+            name  = character.get('investigator_name') if name == "" else name
+            alias = character.get('investigator_alias') if alias == "" else alias
+            
+            cocapi.change_stat(
+                id=character.get('id'),
+                json={"investigator_name": name,
+                      "investigator_alias": alias })
+            
+            embed = discord.Embed(title=f"You are now {name} aka {alias}.", colour=discord.Colour(0x804423))
+
+        else:
+            embed = discord.Embed(title="You have no character attached. You are nobody.", colour=discord.Colour(0x804423))
+            
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="character_sheet")
     async def character_sheet(self, interaction: discord.Interaction) -> None:
@@ -376,9 +421,12 @@ class GeneralCog(commands.Cog):
             "discord_name": interaction.user.name,
             "discord_id": interaction.user.id })
         
-        character = requests.get(f"http://localhost:8000/api/character/{player.get('character')}").json()
+        embed = discord.Embed(title=f"You are nobody.", colour=discord.Colour(0x804423))
         
-        embed = discord.Embed(title=f"You are {character.get('investigator_name')}", colour=discord.Colour(0x804423))
+        if player.get('character'):
+            character = cocapi.character(player.get('character'))
+            embed = discord.Embed(title=f"You are {character.get('investigator_name')}", colour=discord.Colour(0x804423))
+        
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
         
@@ -395,7 +443,7 @@ class GeneralCog(commands.Cog):
             "discord_name": interaction.user.name,
             "discord_id": interaction.user.id })
         
-        character = requests.get(f"http://localhost:8000/api/character/{player.get('character')}").json()
+        character = cocapi.character(player.get('character'))
 
         cocapi.change_stat(
             id=character.get('id'),
