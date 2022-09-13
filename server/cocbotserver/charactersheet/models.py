@@ -86,9 +86,9 @@ class Skill(models.Model):
 
     def __str__(self):
         if self.specialization == "":
-            return str(f"{self.name}")
+            return str(f"{self.name} ({self.base_points})")
         else:
-            return str(f"{self.name} ({self.specialization})")
+            return str(f"{self.name} ({self.specialization}) ({self.base_points})")
         
 class SkillSet(models.Model):
     """Model holding sets of skills for applying to a character."""
