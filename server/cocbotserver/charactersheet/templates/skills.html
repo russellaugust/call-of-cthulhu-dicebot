@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            padding: 3px;
+            border-collapse: collapse;
+        }
+    </style>
+    <head>
+        <body>
+            <h1>{{ formset.instance.investigator_name }}</h1>
+            <form id="myForm" action="" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ formset.management_form }}
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Skill</th>
+                            <th>Base</th>
+                            <th>Category</th>
+                            <th>Specialization</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in formset %}
+                        {{ form.id }}
+                        <tr>
+                            <td>{{ form.name }}</td>
+                            <td>{{ form.base_points }}</td>
+                            <td>{{ form.category }}</td>
+                            <td>{{ form.specialization }}</td>
+                            <td>{{ form.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                    
+                <p><button value="Submit" type="submit">Submit</button></p>
+            </form>
+        </body>
+    </head>
+</html>

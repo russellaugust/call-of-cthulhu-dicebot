@@ -1,4 +1,4 @@
-from django.forms import ModelForm
+from django.forms import ModelForm, Textarea
 from .models import Character, CharacterSkill, Skill
 
 class CharacterForm(ModelForm):
@@ -10,11 +10,19 @@ class SkillForm(ModelForm):
     class Meta:
         model = Skill
         fields = "__all__"
+        widgets = {
+            'description': Textarea(attrs={'cols': 100, 'rows': 20}),
+        }
+        
+class SkillAdminForm(ModelForm):
+    class Meta:
+        model = Skill
+        fields = "__all__"
+        widgets = {
+            'description': Textarea(attrs={'cols': 80, 'rows': 20}),
+        }
         
 class CharacterSkillsForm(ModelForm):
-    # skill = Skill.objects.all()
-    # skill = SkillForm()
-    
     class Meta:
         model = CharacterSkill
         # fields = "__all__"

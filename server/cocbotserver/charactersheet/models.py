@@ -73,7 +73,7 @@ class Location(models.Model):
 
 
 stats_equation = RegexValidator(
-            regex=r'^(?:STR|INT|APP|DEX|EDU|SIZ|CON|POW){0,1}[/*+-]{0,1}\d+$',
+            regex=r'^(?:(?:STR|INT|APP|DEX|EDU|SIZ|CON|POW)[/*+-]{0,1}\d+|\d*|(?:STR|INT|APP|DEX|EDU|SIZ|CON|POW))$',
             message='Must be simple equation with STR|INT|APP|DEX|EDU|SIZ|CON|POW ie DEX/2',
             code='invalid_equation')
 

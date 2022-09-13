@@ -2,7 +2,7 @@ from django.http import HttpResponseRedirect
 from django.http import HttpResponse
 from django.http import JsonResponse
 from .models import Character, CharacterSkill, DiscordChannel, Location, Player, Skill, DiscordMessage, Roll, SkillSet
-from .forms import CharacterForm, CharacterSkillsForm
+from .forms import CharacterForm, CharacterSkillsForm, SkillForm
 from django.shortcuts import render
 from .serializers import CharacterSerializer, CharacterSkillSerializer, CharacterStatsSerializer, DiscordMessageSerializer, LocationSerializer, PlayerSerializer, RollExtendedSerializer, RollSerializer, DiscordChannelSerializer, SkillSerializer, SkillSetSerializer
 from rest_framework.generics import GenericAPIView, CreateAPIView
@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework import mixins
 from rest_framework import viewsets
 from rest_framework import serializers
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, modelformset_factory
 
 
 # Create your views here.
@@ -57,6 +57,22 @@ def attach_skillset(request, character_pk, skillset_pk):
         skill.save()
     
     return JsonResponse({"success":True})
+
+def edit_skills(request):
+    SkillFormSet = modelformset_factory(model=Skill,
+                                   form=SkillForm,
+                                   extra=3 )
+    formset = SkillFormSet()
+    
+    if request.method == 'POST':
+        formset = SkillFormSet(request.POST)
+        if formset.is_valid():
+            formset.save()
+        else:
+            print(formset.errors)
+
+    context = {'formset':formset}
+    return render(request, 'skills.html', context)
         
 def edit_character_skills(request, character_pk):
     CharacterSkillFormSet = inlineformset_factory(
