@@ -13,12 +13,9 @@ router.register('roll', views.RollView)
 router.register(r'roll/channel/(?P<channel_id>\d+)/amount/(?P<num_items>\d+)', viewset=views.RollExtendedView)
 router.register('location', views.LocationView)
 router.register('character', views.CharacterView)
-# router.register(r'character/(?P<character_id>\d+)/skill/(?P<skill_id>\d', views.CharacterView)
 router.register('skill', views.SkillView)
 router.register('characterskill', views.CharacterSkillView)
 router.register('skillset', views.SkillSetView)
-# re_path('^test/(?P<username>.+)/$', views.RollView.as_view({'get':'list'})),
-# router.register("DiscordMessagePartial", views.DiscordMessagePartialUpdateView)
 
 urlpatterns = [
     path('character/<int:characterid>', views.charactersheet, name='charactersheet'),
@@ -27,9 +24,9 @@ urlpatterns = [
     path('player/<int:player_discord_id>/release_character', views.release_character, name='release_character'),
     
     path('character/<int:character_pk>/skills/', views.edit_character_skills, name='edit_character_skills'),
+    path('skills/', views.edit_skills, name='edit_skills'),
     
     # APIs
-    # path('player/<int:discord_id>', views.api_get_player_by_discord, name='api_get_player_by_discord'),
     path('character-stats/<int:character_id>', views.api_get_character_stats, name='api_get_character_stats'),
     path('players/', views.api_get_players, name='api_get_players'),
     
