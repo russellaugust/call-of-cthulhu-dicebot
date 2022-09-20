@@ -41,6 +41,7 @@ class MyCog(commands.Cog):
         # blank source
         options = []
         
+        # return a list of starred skills and stats
         if current == "": 
             if player.get('character'):
                 character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
@@ -56,23 +57,18 @@ class MyCog(commands.Cog):
                     value=json.dumps( {"type"   : f"{stat_name}",
                                        "value"  : f"{stat_value}"} ))
                          for stat_name, stat_value in character_stats.items()]
-                return favorite_skills + stats
-            # return a list of starred skills and stats
-            else:
-                return options
+                options += favorite_skills + stats
 
+        # return a list of starred skills and stats
         elif current == "stats" or current == "characteristics": 
             if player.get('character'):
                 character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
                 
-                return [app_commands.Choice(
+                options += [app_commands.Choice(
                     name=f"{stat_name} ({stat_value})", 
                     value=json.dumps( {"type"   : f"{stat_name}",
                                        "value"  : f"{stat_value}"} ))
                         for stat_name, stat_value in character_stats.items()]
-            # return a list of starred skills and stats
-            else:
-                return options[0:24]
             
         # rolling a stat
         elif current.isnumeric():
@@ -81,7 +77,6 @@ class MyCog(commands.Cog):
                     name=f"Will roll a 1D100 against {current}",
                     value=json.dumps( {"type"   : f"rolling...",
                                        "value"  : f"{current}"} )))
-            return options[0:24]
         
         # elif diceroller is valid diceroller.DiceRolls(current):
             # return 
@@ -95,9 +90,8 @@ class MyCog(commands.Cog):
                             name=f"{skill.get('name')} ({skill.get('points')})",
                             value=json.dumps( {"type"   : f"{skill.get('name')}",
                                                "value"  : f"{skill.get('points')}"} )))
-                return options[0:24]
-            else:
-                return options[0:24]
+        
+        return options[0:24]
         
     @app_commands.command(name="roll")
     @app_commands.autocomplete(roll=roll_autocomplete, opposing=opposingroll_autocomplete)
@@ -303,6 +297,7 @@ class MyCog(commands.Cog):
         
         # check if this particular channel is in the system, if not, add.
         parent_id = interaction.channel.parent_id if isinstance(interaction.channel, discord.Thread) else None
+        
         channel = cocapi.get_or_create_channel(json={
             "name": interaction.channel.name,
             "channel_id": interaction.channel.id,

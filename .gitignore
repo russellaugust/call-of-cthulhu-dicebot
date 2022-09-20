@@ -141,3 +141,4 @@ test*
 /backup
 /venv-mac
 /credentials
+server/cocbotserver/db_220912.sqlite3

@@ -61,7 +61,8 @@ def attach_skillset(request, character_pk, skillset_pk):
 def edit_skills(request):
     SkillFormSet = modelformset_factory(model=Skill,
                                    form=SkillForm,
-                                   extra=3 )
+                                   extra=3,
+                                   can_order=True)
     formset = SkillFormSet()
     
     if request.method == 'POST':
