@@ -11,6 +11,14 @@ API_LINK = "http://localhost:8000/api/"
 
 #discord.opus.load_opus('opus')
 
+    
+def is_json(myjson):
+    try:
+        json.loads(myjson)
+    except ValueError as e:
+        return False
+    return True
+
 class MyCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -103,6 +111,7 @@ class MyCog(commands.Cog):
                                                "value"  : f"{option.get('points')}"} )))
         
         return options[0:24]
+
         
     @app_commands.command(name="roll")
     @app_commands.autocomplete(roll=roll_autocomplete, opposing=opposingroll_autocomplete)
@@ -119,6 +128,7 @@ class MyCog(commands.Cog):
         """ Roll dice or using your character's stats and skills. """
 
         # awful hack to get the roller to work right. 
+        roll = roll if is_json(roll) else json.dumps({"type" : "rolling...", "value" : str(roll)})
         roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
         diceresult = diceroller.DiceRolls(roll.get('value'), repeat=repeat, keep=keep, comment=description)
         
