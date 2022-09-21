@@ -83,13 +83,24 @@ class MyCog(commands.Cog):
             
         else:
             if player.get('character'):
-                for skill in character.get('characterskill_set', []):
+                        
+                character_stats = requests.get(f"http://localhost:8000/character-stats/{player.get('character')}").json()
+                
+                skills = [{"name"   : skill.get('name'),
+                           "points" : skill.get('points') }
+                          for skill in character.get('characterskill_set', [])]
+                stats = [{"name"   : stat_name,
+                          "points" : stat_value }
+                         for stat_name, stat_value in character_stats.items()]
+                all_options = skills + stats
+                
+                for option in all_options:
                     # check if search is present in both skill name and specialization
-                    if current.lower() in skill['name'].lower():
+                    if current.lower() in option.get('name', '').lower():
                         options.append( app_commands.Choice(
-                            name=f"{skill.get('name')} ({skill.get('points')})",
-                            value=json.dumps( {"type"   : f"{skill.get('name')}",
-                                               "value"  : f"{skill.get('points')}"} )))
+                            name=f"{option.get('name')} ({option.get('points')})",
+                            value=json.dumps( {"type"   : f"{option.get('name')}",
+                                               "value"  : f"{option.get('points')}"} )))
         
         return options[0:24]
         
