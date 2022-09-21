@@ -160,9 +160,7 @@ class MyCog(commands.Cog):
         
         # awful hack to get the roller to work right. 
         roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
-        diceresult = diceroller.DiceRolls(roll.get('value'), repeat=repeat, keep=keep, comment=description)
-        
-        diceresult = diceroller.DiceRolls(roll, repeat=2, keep=-1)
+        diceresult = diceroller.DiceRolls(roll.get('value'), repeat=2, keep=-1, comment=description)
         
         embed = self.__roll_with_format__(interaction=interaction, 
                                           rolls=diceresult, 
@@ -193,9 +191,8 @@ class MyCog(commands.Cog):
         
         # awful hack to get the roller to work right. 
         roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
-        diceresult = diceroller.DiceRolls(roll.get('value'), repeat=repeat, keep=keep, comment=description)
-        
-        diceresult = diceroller.DiceRolls(roll, repeat=2, keep=1)
+        diceresult = diceroller.DiceRolls(roll.get('value'), repeat=2, keep=1, comment=description)
+
         embed = self.__roll_with_format__(interaction=interaction, rolls=diceresult, additional_comment=f" - *with disadvantage*")
 
         not_omitted = diceresult.not_omitted_rolls()[0]
