@@ -169,6 +169,7 @@ class MyCog(commands.Cog):
         """ Roll with Advantage / Bonus """
         
         # awful hack to get the roller to work right. 
+        roll = roll if is_json(roll) else json.dumps({"type" : "rolling...", "value" : str(roll)})
         roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
         diceresult = diceroller.DiceRolls(roll.get('value'), repeat=2, keep=-1, comment=description)
         
@@ -200,6 +201,7 @@ class MyCog(commands.Cog):
         """ Roll with Disadvantage / Penalty """
         
         # awful hack to get the roller to work right. 
+        roll = roll if is_json(roll) else json.dumps({"type" : "rolling...", "value" : str(roll)})
         roll = json.loads(roll) if isinstance(json.loads(roll), dict) else {"type" : "rolling...", "value" : str(roll)}
         diceresult = diceroller.DiceRolls(roll.get('value'), repeat=2, keep=1, comment=description)
 
