@@ -10,7 +10,16 @@ import cocapi
 
 class GeneralCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
+        
+        # load bot
         self.bot = bot
+        
+        # load context menus
+        self.ctx_menu = app_commands.ContextMenu(
+                name='Bot Notification',
+                callback=self.my_cool_context_menu,
+            )
+        self.bot.tree.add_command(self.ctx_menu)
 
     async def __make_screenplay__ (self, interaction, ephemeral=False) -> None:
         if isinstance(interaction.channel, discord.Thread):
@@ -49,7 +58,9 @@ class GeneralCog(commands.Cog):
                 content="This only works in threads", 
                 ephemeral=True)
     
-    async def skill_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+    async def skill_autocomplete(self, 
+                                 interaction: discord.Interaction, 
+                                 current: str) -> List[app_commands.Choice[str]]:
         
         # get full skills list
         skills = requests.get(f"http://localhost:8000/api/skill").json()
@@ -72,7 +83,9 @@ class GeneralCog(commands.Cog):
             
         return skills_to_return[0:24]
     
-    async def skillset_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+    async def skillset_autocomplete(self, 
+                                    interaction: discord.Interaction, 
+                                    current: str) -> List[app_commands.Choice[str]]:
 
         # get full skills list
         skillsets = cocapi.get_skillsets()
@@ -89,8 +102,8 @@ class GeneralCog(commands.Cog):
         return skills_to_return[0:24]
 
     async def char_stats_autocomplete(self, 
-                                           interaction: discord.Interaction, 
-                                           current: str) -> List[app_commands.Choice[str]]:
+                                      interaction: discord.Interaction, 
+                                      current: str) -> List[app_commands.Choice[str]]:
         for_return = []
 
         player = cocapi.get_or_create_player(json={
@@ -292,7 +305,9 @@ class GeneralCog(commands.Cog):
     @app_commands.autocomplete(character=attach_autocomplete)
     @app_commands.describe(
         character="Which character are you taking control?")
-    async def character_attach(self, interaction: discord.Interaction, character: str) -> None:
+    async def character_attach(self, 
+                               interaction: discord.Interaction, 
+                               character: str) -> None:
         """ Attach a character to yourself. """
         
         player = cocapi.get_or_create_player(json={
@@ -301,7 +316,9 @@ class GeneralCog(commands.Cog):
             "discord_id": interaction.user.id })
         
         # set default embed
-        embed = discord.Embed(title=f"Character is already in use.", description=f"", colour=discord.Colour(0x804423))
+        embed = discord.Embed(title=f"Character is already in use.", 
+                              description=f"", 
+                              colour=discord.Colour(0x804423))
         
         # get the chosen character
         character_json = cocapi.character(character)
@@ -321,19 +338,25 @@ class GeneralCog(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="character_release")
-    async def character_release(self, interaction: discord.Interaction) -> None:
+    async def character_release(self, 
+                                interaction: discord.Interaction) -> None:
         """ Releases the character you currenty have (if you have one). """
         success = requests.get(f"http://localhost:8000/player/{interaction.user.id}/release_character").json()
         
-        embed = discord.Embed(title=f"{interaction.user.name} released a character: {success.get('success')}", colour=discord.Colour(0x804423))
+        embed = discord.Embed(title=f"{interaction.user.name} released a character: {success.get('success')}", 
+                              colour=discord.Colour(0x804423))
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, 
+                                                ephemeral=True)
         
 
     @app_commands.command(name="character_change_name")
     @app_commands.describe(name="Character's full name", 
                            alias="Character's shorthand name (as it appears in the script).")
-    async def character_change_name(self, interaction: discord.Interaction, name: str = "", alias: str = "") -> None:
+    async def character_change_name(self, 
+                                    interaction: discord.Interaction, 
+                                    name: str = "", 
+                                    alias: str = "") -> None:
         """ Edit your name and alias. """
         player = cocapi.get_or_create_player(json={
             "name": "",
@@ -351,10 +374,12 @@ class GeneralCog(commands.Cog):
                 json={"investigator_name": name,
                       "investigator_alias": alias })
             
-            embed = discord.Embed(title=f"You are now {name} aka {alias}.", colour=discord.Colour(0x804423))
+            embed = discord.Embed(title=f"You are now {name} aka {alias}.", 
+                                  colour=discord.Colour(0x804423))
 
         else:
-            embed = discord.Embed(title="You have no character attached. You are nobody.", colour=discord.Colour(0x804423))
+            embed = discord.Embed(title="You have no character attached. You are nobody.", 
+                                  colour=discord.Colour(0x804423))
             
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -422,11 +447,13 @@ class GeneralCog(commands.Cog):
             "discord_name": interaction.user.name,
             "discord_id": interaction.user.id })
         
-        embed = discord.Embed(title=f"You are nobody.", colour=discord.Colour(0x804423))
+        embed = discord.Embed(title=f"You are nobody.", 
+                              colour=discord.Colour(0x804423))
         
         if player.get('character'):
             character = cocapi.character(player.get('character'))
-            embed = discord.Embed(title=f"You are {character.get('investigator_name')}", colour=discord.Colour(0x804423))
+            embed = discord.Embed(title=f"You are {character.get('investigator_name')}", 
+                                  colour=discord.Colour(0x804423))
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -436,7 +463,10 @@ class GeneralCog(commands.Cog):
     @app_commands.describe(
         stat="Characteristic modify.",
         modify="New characteristic value.")
-    async def change_stat(self, interaction: discord.Interaction, stat: str, modify: int) -> None:
+    async def change_stat(self, 
+                          interaction: discord.Interaction, 
+                          stat: str, 
+                          modify: int) -> None:
         """ Modify your character's characteristics. """
 
         player = cocapi.get_or_create_player(json={
@@ -449,7 +479,8 @@ class GeneralCog(commands.Cog):
         cocapi.change_stat(
             id=character.get('id'),
             json={stat: modify})
-        embed = discord.Embed(title=f"{stat} now {modify}.", colour=discord.Colour(0x804423))
+        embed = discord.Embed(title=f"{stat} now {modify}.", 
+                              colour=discord.Colour(0x804423))
         await interaction.response.send_message(embed=embed, ephemeral=True)
         
     @app_commands.command(name="add_skill")
@@ -459,7 +490,8 @@ class GeneralCog(commands.Cog):
     async def add_skill(self, interaction: discord.Interaction, skill: int) -> None:
         """ Add a skill to your character. """
         
-        embed = discord.Embed(title=f"ERROR", colour=discord.Colour(0x804423))
+        embed = discord.Embed(title=f"ERROR", 
+                              colour=discord.Colour(0x804423))
         
         player = cocapi.get_or_create_player(json={
             "name": "",
@@ -470,9 +502,10 @@ class GeneralCog(commands.Cog):
             character = cocapi.character(id=player.get('character'))
             # apply the new fields to the skill
             cocapi.add_charskill(json={"skill_fk": skill,
-                                    "character_fk": character.get('id') })
+                                       "character_fk": character.get('id') })
         
-            embed = discord.Embed(title=f"Skill added.", colour=discord.Colour(0x804423))
+            embed = discord.Embed(title=f"Skill added.", 
+                                  colour=discord.Colour(0x804423))
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
         
@@ -483,7 +516,12 @@ class GeneralCog(commands.Cog):
         name="Modify the name as it appears on your character sheet, e.g. Language(Other) could be Spanish.",
         stat="New skill value.",
         delete="Delete the selected skill from your character sheet.")
-    async def change_skill(self, interaction: discord.Interaction, skill: int, name: str = "", stat: int = -1, delete: bool = False) -> None:
+    async def change_skill(self, 
+                           interaction: discord.Interaction, 
+                           skill: int, 
+                           name: str = "", 
+                           stat: int = -1, 
+                           delete: bool = False) -> None:
         """ Modify your character's skills. """
         
         charskill = requests.get(f"http://localhost:8000/api/characterskill/{skill}").json()
@@ -507,7 +545,8 @@ class GeneralCog(commands.Cog):
         if delete:
             cocapi.delete_charskill(id=skill)
         
-        embed = discord.Embed(title=f"Skill: {new_skill.get('name')} now {new_skill.get('points')}", colour=discord.Colour(0x804423))
+        embed = discord.Embed(title=f"Skill: {new_skill.get('name')} now {new_skill.get('points')}", 
+                              colour=discord.Colour(0x804423))
         await interaction.response.send_message(embed=embed, ephemeral=True)
         
     @app_commands.command(name="skill_favorite")
@@ -515,28 +554,45 @@ class GeneralCog(commands.Cog):
     @app_commands.describe(
         skill="Skill to favorite or unfavorite.",
         favorite="True to favorite, False to unfavorite.")
-    async def skill_favorite(self, interaction: discord.Interaction, skill: int, favorite: bool) -> None:
+    async def skill_favorite(self, 
+                             interaction: discord.Interaction, 
+                             skill: int, 
+                             favorite: bool) -> None:
         """ Add skill to favorites list. """
         
         # apply the new fields to the skill
         cocapi.change_charskill(id=skill, json={ "favorite": favorite })
-        embed = discord.Embed(title=f"Skill Favorited: {favorite}.", colour=discord.Colour(0x804423))
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        embed = discord.Embed(title=f"Skill Favorited: {favorite}.", 
+                              colour=discord.Colour(0x804423))
+        
+        await interaction.response.send_message(embed=embed, 
+                                                ephemeral=True)
 
 
+    @app_commands.checks.has_permissions(administrator=True)
     @app_commands.command(name="admin_rolls_testing")
-    async def admin_rolls_testing(self, interaction: discord.Interaction, totalmsgs: int) -> None:        
+    async def admin_rolls_testing(self, 
+                                  interaction: discord.Interaction, 
+                                  totalmsgs: int) -> None:        
         """ Testing for admin use only."""
         
         rolls = cocapi.get_rolls_history(interaction.channel.id, 4)
-        embed = discord.Embed(title=f"check logs.", colour=discord.Colour(0x804423))
+        
+        embed = discord.Embed(title=f"check logs.", 
+                              colour=discord.Colour(0x804423))
+        print(rolls)
         await interaction.response.send_message(embed=embed, ephemeral=True)
         
+    @app_commands.checks.has_permissions(administrator=True)
     @app_commands.command(name="admin_testing")
-    async def admin_testing(self, interaction: discord.Interaction, totalmsgs: int) -> None:
+    async def admin_testing(self, 
+                            interaction: discord.Interaction, 
+                            totalmsgs: int) -> None:
         """ Testing for admin use only."""
         
-        embed = discord.Embed(title=f"You are not an admin.", colour=discord.Colour(0x804423))
+        embed = discord.Embed(title=f"You are not an admin.", 
+                              colour=discord.Colour(0x804423))
         
         if interaction.user.id == 222234033650794497:        
             async for message in interaction.channel.history(limit=totalmsgs):
@@ -571,10 +627,34 @@ class GeneralCog(commands.Cog):
                 print (newmessage)
                         
             embed = discord.Embed(title=f"Added messages to DB.", colour=discord.Colour(0x804423))
-
             
         await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.command(name="admin_reply")
+    async def admin_reply(self, 
+                          interaction: discord.Interaction, 
+                          custom_msg: str, 
+                          msg_id: str) -> None:
+        """ Testing for admin use only."""
+        
+        msg_id_int = int(msg_id)
+        msg = await interaction.channel.fetch_message(msg_id_int)
+        
+        new_message = f"Howdy! Found a formatting error in this message:\n{msg.jump_url} \n{custom_msg}"
+        
+        await msg.author.send(new_message)
+        await interaction.response.send_message(f'Message sent.\n{new_message}', ephemeral=True)
 
+    # @app_commands.checks.has_permissions(ban_members=True)
+    # @app_commands.guilds(12345)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def my_cool_context_menu(self, 
+                                   interaction: discord.Interaction, 
+                                   message: discord.Message) -> None:
+        # await message.reply.send_message("test!", ephemeral=True)
+        await message.author.send("test!")
+        await interaction.response.send_message('Message sent.', ephemeral=True)
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(GeneralCog(bot))
