@@ -51,7 +51,10 @@ class CoCBot(commands.Bot):
         parent_id = message.channel.parent_id if isinstance(message.channel, discord.Thread) else None
         
         # if channel is part of approved group and not a DM (ephemerals are DMs)
-        if (message.channel.id in VALID_CHANNELS or parent_id in VALID_CHANNELS) and not isinstance(message.channel, discord.DMChannel):
+        if ((message.channel.id in VALID_CHANNELS 
+             or parent_id in VALID_CHANNELS) 
+            and not isinstance(message.channel, discord.DMChannel)):
+            
             # check if player is in the system, if not add.
             player = cocapi.get_or_create_player(json={
                 "name": "",
@@ -75,57 +78,50 @@ class CoCBot(commands.Bot):
         
         # ignore the bot
         if not message.author.bot:
+            
             if message.content == 'tree sync':
                 await message.channel.send('commands synced.')
                 await self.tree.sync()
+            
             if message.content == "check channel type thread":
                 await message.channel.send(f'Check Channel Type: {isinstance(message.channel, discord.Thread)}')
+            
             if message.content == "trains":
                 #trains = requests.get(f"{API_LINK}trainfacts").json()
                 await message.channel.send('Did someone say *trains*?')
-
-            # TODO: add message to database
-            if message.content.startswith('BANANABREAD'):
-                archived = message.channel.archived_threads()
-                async for archive in archived:
-                    print(archive)
-            
-            if message.content == "LOAD ALL":
-                print("working to load all messages in channel or thread...")
-
-                async for message in message.channel.history(limit=200):
-                    
-                    # reference = message.reference.message_id if message.reference is not None and not message.is_system else None
-
-                    # check if player is in the system, if not add.
-                    player = cocapi.get_or_create_player(json={
-                        "name": "",
-                        "discord_name": message.author.name,
-                        "discord_id": message.author.id })
-                    
-                    # check if this particular channel is in the system, if not, add.
-                    channel = cocapi.get_or_create_channel(json={
-                        "name": message.channel.name,
-                        "channel_id": message.channel.id,
-                        "parent_id": 0 })                
-                    
-                    # save the message to the db
-                    newmessage = cocapi.create_message(json={
-                        "messagetime": message.created_at.isoformat(),
-                        "discord_id": message.id,
-                        "content": message.content,
-                        "reply_msg_id": message.reference.message_id if message.reference is not None else None,
-                        "player": player.get('id'),
-                        "discordchannel": channel.get('id') })
         
     async def on_raw_message_edit(self, payload):
         content = payload.data.get('content', '')
-        message = cocapi.message_content_update(discord_id=payload.message_id, content=content)
+        message = cocapi.message_content_update(discord_id=payload.message_id, 
+                                                content=content)
         
     async def on_raw_message_delete(self, payload):
         cocapi.message_delete(discord_id=payload.message_id)
-    
         
+    # This context menu command only works on messages
+    @discord.app_commands.context_menu(name='Report to Moderators')
+    async def report_message(interaction: discord.Interaction, message: discord.Message):
+        # We're sending this response message with ephemeral=True, so only the command executor can see it
+        await interaction.response.send_message(
+            f'Thanks for reporting this message by {message.author.mention} to our moderators.', ephemeral=True
+        )
+
+        # Handle report by sending it into a log channel
+        log_channel = interaction.guild.get_channel(0)  # replace with your channel id
+
+        embed = discord.Embed(title='Reported Message')
+        if message.content:
+            embed.description = message.content
+
+        embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
+        embed.timestamp = message.created_at
+
+        url_view = discord.ui.View()
+        url_view.add_item(discord.ui.Button(label='Go to Message', style=discord.ButtonStyle.url, url=message.jump_url))
+
+        await log_channel.send(embed=embed, view=url_view)
+    
+
 
 intents = discord.Intents.default()
 intents.message_content = True
