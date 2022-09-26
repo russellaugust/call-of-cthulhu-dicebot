@@ -20,7 +20,8 @@ VALID_CHANNELS = cred.channels
 
 class CoCBot(commands.Bot):
     def __init__(self, *, intents: discord.Intents, application_id: int):
-        super().__init__(command_prefix='.', intents=intents, application_id=application_id)
+        super().__init__(command_prefix='.', intents=intents, 
+                         application_id=application_id)
         self.initial_extensions = [
             'cogs.SlashDice',
             'cogs.SlashGeneral',
@@ -103,7 +104,8 @@ class CoCBot(commands.Bot):
     async def report_message(interaction: discord.Interaction, message: discord.Message):
         # We're sending this response message with ephemeral=True, so only the command executor can see it
         await interaction.response.send_message(
-            f'Thanks for reporting this message by {message.author.mention} to our moderators.', ephemeral=True
+            f'Thanks for reporting this message by {message.author.mention} to our moderators.', 
+            ephemeral=True
         )
 
         # Handle report by sending it into a log channel
@@ -113,16 +115,18 @@ class CoCBot(commands.Bot):
         if message.content:
             embed.description = message.content
 
-        embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
+        embed.set_author(name=message.author.display_name, 
+                         icon_url=message.author.display_avatar.url)
+        
         embed.timestamp = message.created_at
 
         url_view = discord.ui.View()
-        url_view.add_item(discord.ui.Button(label='Go to Message', style=discord.ButtonStyle.url, url=message.jump_url))
+        url_view.add_item(discord.ui.Button(label='Go to Message', 
+                                            style=discord.ButtonStyle.url, 
+                                            url=message.jump_url))
 
         await log_channel.send(embed=embed, view=url_view)
     
-
-
 intents = discord.Intents.default()
 intents.message_content = True
 bot = CoCBot(intents=intents, application_id=APPLICATION_ID)
