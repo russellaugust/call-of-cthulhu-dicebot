@@ -8,6 +8,16 @@ import mdtools
 import os, uuid, requests, textwrap
 import cocapi
 
+class FF_Menu(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+        
+    @discord.ui.button(label="Send Message", style=discord.ButtonStyle.grey)
+    async def menu1(self, button: discord.ui.Button, interaction:discord.Integration):
+        print ("working")
+        await button.response.send_message("CLICKED")
+
 class GeneralCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         
@@ -21,11 +31,15 @@ class GeneralCog(commands.Cog):
             )
         self.bot.tree.add_command(self.ctx_menu)
 
-    async def __make_screenplay__ (self, interaction, ephemeral=False) -> None:
+    async def __make_screenplay__ (self, 
+                                   interaction, 
+                                   ephemeral=False) -> None:
+        
         if isinstance(interaction.channel, discord.Thread):
             # Get all messages from the channel as a list
             all_messages = [f"{message.content}" 
-                            async for message in interaction.channel.history(oldest_first=True)]
+                            async for message in interaction.channel.history(
+                                oldest_first=True)]
             
             # extract the code fence from each message individually, and create a new list
             fountain_md = []
@@ -174,6 +188,15 @@ class GeneralCog(commands.Cog):
                         value=str(character['id'])))
             
         return for_return[0:24]
+
+    @app_commands.command(name="menu_test")
+    async def menu_test(self, interaction: discord.Interaction) -> None:
+        """ Menu Testing """
+        view = FF_Menu()
+        await interaction.response.send_message(
+            content=f"Hi, {interaction.user.mention}, I'm Barnautomaton 3000. I was pieced back together at Miskatonic University and now my brain is in a jar!",
+            view=view
+            )
 
     @app_commands.command(name="hello")
     async def hello(self, interaction: discord.Interaction) -> None:
